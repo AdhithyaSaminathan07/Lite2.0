@@ -32,36 +32,51 @@
 // }
 
 
-import type { Metadata } from 'next';
-import { Poppins } from 'next/font/google';
-import './globals.css';
+// import type { Metadata } from 'next';
+// import { Poppins } from 'next/font/google';
+// import './globals.css';
 
-const poppins = Poppins({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-});
+// const poppins = Poppins({
+//   subsets: ['latin'],
+//   weight: ['400', '500', '600', '700'],
+// });
 
-export const metadata: Metadata = {
-  title: 'Billzzy Lite',
-  description: 'Effortless Payments',
+// export const metadata: Metadata = {
+//   title: 'Billzzy Lite',
+//   description: 'Effortless Payments',
+// };
+
+// export default function RootLayout({
+//   children,
+// }: {
+//   children: React.ReactNode;
+// }) {
+//   return (
+//     <html lang="en">
+//       <head>
+//         <link rel="manifest" href="/manifest.json" />
+//         <meta name="theme-color" content="#6B4EFF" />
+//       </head>
+//       <body className={poppins.className}>
+//         <main className="container mx-auto max-w-md px-6 py-8">
+//           {children}
+//         </main>
+//       </body>
+//     </html>
+//   );
+// }
+
+import "./globals.css";
+
+export const metadata = {
+  title: "Billzzy Lite",
+  description: "Billing made simple",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#6B4EFF" />
-      </head>
-      <body className={poppins.className}>
-        <main className="container mx-auto max-w-md px-6 py-8">
-          {children}
-        </main>
-      </body>
+      <body className="min-h-screen bg-background text-foreground">{children}</body>
     </html>
   );
 }
