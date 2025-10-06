@@ -1,46 +1,44 @@
-"use client";
+// src/components/forms/LoginForm.tsx
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import React from 'react';
+import Link from 'next/link';
 
 export default function LoginForm() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const router = useRouter();
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // For now, redirect to dashboard
-    router.push("/dashboard");
-  };
-
+  // NOTE: This is a placeholder. All form logic (state, handleSubmit, etc.) goes here.
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="bg-card p-6 rounded-lg shadow-md w-96 space-y-4"
-    >
-      <h2 className="text-2xl font-bold text-center text-primary">Login</h2>
-      <input
-        type="email"
-        placeholder="Email"
-        className="w-full px-3 py-2 border rounded-md"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        className="w-full px-3 py-2 border rounded-md"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-      />
-      <button
-        type="submit"
-        className="w-full bg-primary text-white py-2 rounded-md hover:bg-blue-600"
+    <form className="space-y-6">
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium text-gray-700 text-left mb-1">
+          Email Address
+        </label>
+        <input 
+          id="email" 
+          name="email" 
+          type="email" 
+          required 
+          // CRITICAL: w-full for responsiveness
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+        />
+      </div>
+      <div>
+        <label htmlFor="password" className="block text-sm font-medium text-gray-700 text-left mb-1">
+          Password
+        </label>
+        <input 
+          id="password" 
+          name="password" 
+          type="password" 
+          required 
+          // CRITICAL: w-full for responsiveness
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+        />
+      </div>
+      <button 
+        type="submit" 
+        // CRITICAL: w-full for responsiveness
+        className="w-full px-4 py-2 text-white font-semibold bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700 transition duration-150"
       >
-        Login
+        Log In
       </button>
     </form>
   );

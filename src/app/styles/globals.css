@@ -1,0 +1,30 @@
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+
+/* @import "tailwindcss"; */
+/* 
+:root {
+  --background: #f9fafb;
+  --foreground: #111827;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+} */ 
+
+
+
+/* ./src/app/globals.css */
+
+@import "tailwindcss";
+/* Or the standard v3 syntax:
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+*/
+
+/* Any other global styles go below here */
