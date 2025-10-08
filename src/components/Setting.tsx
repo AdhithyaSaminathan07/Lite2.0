@@ -1,7 +1,5 @@
 // src/components/Settings.tsx
 
-// This is a server component, perfect for displaying UI.
-// No 'use client' is needed unless you add state or event listeners.
 
 export default function Settings() {
   return (
