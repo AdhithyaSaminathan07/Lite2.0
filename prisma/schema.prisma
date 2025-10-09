@@ -1,0 +1,30 @@
+// prisma/schema.prisma
+
+
+// Part 1: The Generator Block
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Part 2: The Datasource Block
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// Part 3: The Updated Product Model Block
+model Product {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  name          String
+  quantity      Int
+  buyingPrice   Float
+  sellingPrice  Float
+  gstRate       Float
+  
+  sku           String?   @unique
+  description   String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
