@@ -1,31 +1,4 @@
-// src/app/api/products/[id]/route.ts
 
-// import { PrismaClient } from '@prisma/client';
-// import { NextResponse } from 'next/server';
-
-// const prisma = new PrismaClient();
-
-// // This runs when you want to UPDATE a product
-// export async function PUT(request: Request, { params }: { params: { id: string } }) {
-//   // FIX: Change parseInt to Number.parseInt
-//   const id = Number.parseInt(params.id, 10);
-//   const data = await request.json();
-//   const updatedProduct = await prisma.product.update({
-//     where: { id },
-//     data: data,
-//   });
-//   return NextResponse.json(updatedProduct);
-// }
-
-// // This runs when you want to DELETE a product
-// export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-//   // FIX: Change parseInt to Number.parseInt
-//   const id = Number.parseInt(params.id, 10);
-//   await prisma.product.delete({
-//     where: { id },
-//   });
-//   return new NextResponse(null, { status: 204 });
-// }
 
 // src/app/api/products/[id]/route.ts
 
