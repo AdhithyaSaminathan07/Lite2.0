@@ -14,7 +14,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <link rel="apple-touch-icon" href="/icons/icon-192.png" />
 </head>
+<<<<<<< HEAD
       <body className="bg-gray-50">{children}
+=======
+      <body className='bg-gray-50'>{children}
+>>>>>>> origin/main
 
       </body>
     </html>
