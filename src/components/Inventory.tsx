@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-// src/components/Inventory.tsx
-=======
->>>>>>> origin/main
 'use client';
 
 import React, { useState, useEffect } from "react";

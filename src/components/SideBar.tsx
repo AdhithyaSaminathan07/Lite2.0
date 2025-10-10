@@ -1,6 +1,5 @@
 'use client';
 
-// Fix all "window" TypeScript errors
 declare const window: any;
 
 import Link from 'next/link';
@@ -33,15 +32,24 @@ function NavLink({
   return (
     <Link
       href={href}
-      className={`flex items-center px-4 py-3 rounded-lg transition-colors ${
+      className={`flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200 ${
         isActive
-          ? 'bg-indigo-50 text-indigo-700 font-semibold border-r-2 border-indigo-600'
-          : 'text-gray-700 hover:bg-gray-100'
+          ? 'bg-[#5a4fcf] text-white shadow-lg'
+          : 'text-gray-700 hover:bg-gray-50'
       }`}
       onClick={onClick}
     >
       {children}
     </Link>
+  );
+}
+
+// Logo component now uses your Billzzy Lite logo from public folder
+function Logo() {
+  return (
+    <div className="flex items-center justify-center">
+      <img src="/images/billzzy-lite.png" alt="Billzzy Lite" className="h-12 w-auto lg:h-12" />
+    </div>
   );
 }
 
@@ -55,11 +63,10 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
   };
 
   const handleLogout = () => {
-    // Clear any saved session or token
     if (typeof window !== 'undefined') {
       window.localStorage.clear();
     }
-    router.push('/'); // redirect to login page
+    router.push('/');
   };
 
   useEffect(() => {
@@ -89,54 +96,54 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
       {/* Sidebar */}
       <aside
         id="sidebar"
-        className={`fixed top-0 left-0 w-64 h-full bg-white border-r z-50 
+        className={`fixed top-0 left-0 w-80 h-full bg-white z-50 
                     flex flex-col transform transition-transform duration-300 ease-in-out
                     lg:relative lg:translate-x-0
                     ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
-        {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b">
-          <h1 className="text-xl font-bold text-indigo-600">Billzy Lite</h1>
+        {/* Header with Logo */}
+        <div className="flex justify-between items-center px-6 py-8">
+          <Logo />
           <button
             onClick={() => setIsMobileOpen(false)}
-            className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="lg:hidden w-11 h-11 flex items-center justify-center hover:bg-gray-100 rounded-xl transition-colors"
             aria-label="Close menu"
           >
-            <X className="w-5 h-5" />
+            <X className="w-6 h-6 text-gray-600" />
           </button>
         </div>
 
         {/* Main navigation */}
-        <nav className="flex flex-col space-y-1 flex-grow p-4">
+        <nav className="flex flex-col gap-3 flex-grow px-5 py-4">
           <NavLink href="/dashboard" onClick={handleLinkClick}>
-            <Home className="w-5 h-5 mr-3" />
-            <span>Dashboard</span>
+            <Home className="w-6 h-6" />
+            <span className="text-base font-semibold">Dashboard</span>
           </NavLink>
 
           <NavLink href="/inventory" onClick={handleLinkClick}>
-            <Package className="w-5 h-5 mr-3" />
-            <span>Inventory</span>
+            <Package className="w-6 h-6" />
+            <span className="text-base font-semibold">Inventory</span>
           </NavLink>
 
           <NavLink href="/billing" onClick={handleLinkClick}>
-            <CreditCard className="w-5 h-5 mr-3" />
-            <span>Billing</span>
+            <CreditCard className="w-6 h-6" />
+            <span className="text-base font-semibold">Billing</span>
           </NavLink>
 
           <NavLink href="/settings" onClick={handleLinkClick}>
-            <Settings className="w-5 h-5 mr-3" />
-            <span>Settings</span>
+            <Settings className="w-6 h-6" />
+            <span className="text-base font-semibold">Settings</span>
           </NavLink>          
         </nav>
 
         {/* Logout section */}
-        <div className="p-4 border-t">
+        <div className="px-5 py-6">
           <button
             onClick={handleLogout}
-            className="flex items-center w-full px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+            className="flex items-center gap-4 w-full px-5 py-4 rounded-2xl text-red-500 hover:bg-red-50 transition-all duration-200"
           >
-            <LogOut className="w-5 h-5 mr-3" />
-            <span className="font-medium">Logout</span>
+            <LogOut className="w-6 h-6" />
+            <span className="text-base font-semibold">Logout</span>
           </button>
         </div>
       </aside>
@@ -146,17 +153,18 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
 
 export function MobileHeader({ onMenuClick, isMobileOpen }: MobileHeaderProps) {
   return (
-    <header className="lg:hidden fixed top-0 left-0 right-0 bg-white border-b z-30 h-14 flex items-center px-4 shadow-sm">
+    <header className="lg:hidden fixed top-0 left-0 right-0 bg-white z-30 h-20 flex items-center justify-between px-5 shadow-sm">
+      <Logo />
       <button
         onClick={onMenuClick}
-        className="p-2 hover:bg-gray-100 rounded-lg transition-colors mr-3"
+        className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 rounded-xl transition-colors"
         aria-label="Open menu"
         aria-controls="sidebar"
         aria-expanded={isMobileOpen}
       >
-        <Menu className="w-5 h-5" />
+        <Menu className="w-6 h-6 text-gray-700" />
       </button>
-      <h1 className="text-lg font-semibold text-gray-900">Billzy Lite</h1>
     </header>
   );
 }
+
