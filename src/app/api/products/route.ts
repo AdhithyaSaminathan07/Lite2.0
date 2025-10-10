@@ -1,36 +1,92 @@
+
+// // src/app/api/products/route.ts
+
 // import { PrismaClient } from '@prisma/client';
 // import { NextResponse } from 'next/server';
 
 // const prisma = new PrismaClient();
 
-// // This runs when you want to GET all products
+// // The GET function requires no changes.
 // export async function GET() {
 //   try {
-//     const products = await prisma.product.findMany();
+//     const products = await prisma.product.findMany({
+//       orderBy: {
+//         createdAt: 'desc',
+//       },
+//     });
 //     return NextResponse.json(products);
 //   } catch (error) {
-//     // It's crucial to log the error for debugging purposes
-//     console.error("Failed to fetch products:", error);
-
-//     // Return a proper error response to the client
-//     return new NextResponse("Internal Server Error", { status: 500 });
+//     console.error('Failed to fetch products:', error);
+//     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+//     return new NextResponse(
+//       JSON.stringify({ message: 'Failed to fetch products', error: errorMessage }),
+//       { status: 500 }
+//     );
 //   }
 // }
 
-// // You likely also have a POST function here to create products.
-// // It's good practice to add try...catch to it as well.
+// // REMOVED: All logic for 'barcode' is gone.
 // export async function POST(request: Request) {
 //   try {
-//     const data = await request.json();
-//     const newProduct = await prisma.product.create({
-//       data: data,
+//     const body = await request.json();
+
+//     // --- LOGIC FOR BATCH UPLOAD (FROM EXCEL) ---
+//     if (Array.isArray(body)) {
+//       const incomingProducts = body.map((product, index) => ({
+//         name: String(product.name || ''),
+//         quantity: Number(product.quantity) || 0,
+//         buyingPrice: Number(product.buyingPrice) || 0,
+//         sellingPrice: Number(product.sellingPrice) || 0,
+//         gstRate: Number(product.gstRate) || 0,
+//         description: String(product.description || ''),
+//         sku: product.sku ? String(product.sku) : `SKU-${Date.now()}-${index}`, // Keep SKU logic
+//         image: product.image || null,
+//       }));
+      
+//       // Your existing logic for handling duplicate SKUs is still valid
+//       const incomingSkus = incomingProducts.map(p => p.sku);
+//       const existingProducts = await prisma.product.findMany({
+//         where: { sku: { in: incomingSkus } },
+//         select: { sku: true },
+//       });
+//       const existingSkus = new Set(existingProducts.map(p => p.sku));
+//       const productsToCreate = incomingProducts.filter(p => !existingSkus.has(p.sku));
+
+//       if (productsToCreate.length > 0) {
+//         await prisma.product.createMany({
+//           data: productsToCreate,
+//         });
+//       }
+//     } else {
+//       // --- LOGIC FOR SINGLE PRODUCT CREATION (FROM MODAL) ---
+//       const { sku, ...restOfBody } = body;
+//       const newProductData = {
+//         ...restOfBody,
+//         sku: sku || `SKU-${Date.now()}`,
+//       };
+      
+//       await prisma.product.create({
+//         data: newProductData,
+//       });
+//     }
+
+//     // After creating, fetch and return the entire updated list
+//     const allProducts = await prisma.product.findMany({
+//       orderBy: {
+//         createdAt: 'desc',
+//       },
 //     });
-//     return NextResponse.json(newProduct, { status: 201 });
+//     return NextResponse.json(allProducts, { status: 201 });
 //   } catch (error) {
-//     console.error("Failed to create product:", error);
-//     return new NextResponse("Internal Server Error", { status: 500 });
+//     console.error('Failed to create product(s):', error);
+//     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+//     return new NextResponse(
+//       JSON.stringify({ message: 'Failed to create product(s)', error: errorMessage }),
+//       { status: 500 }
+//     );
 //   }
 // }
+
 
 // src/app/api/products/route.ts
 
@@ -39,36 +95,84 @@ import { NextResponse } from 'next/server';
 
 const prisma = new PrismaClient();
 
-// This is your existing GET function - no changes needed here
 export async function GET() {
   try {
-    const products = await prisma.product.findMany();
+    const products = await prisma.product.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
     return NextResponse.json(products);
   } catch (error) {
-    console.error("Failed to fetch products:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    console.error('Failed to fetch products:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return new NextResponse(
+      JSON.stringify({ message: 'Failed to fetch products', error: errorMessage }),
+      { status: 500 }
+    );
   }
 }
 
-// This is the updated POST function with the fix
 export async function POST(request: Request) {
   try {
-    const data = await request.json();
+    const body = await request.json();
 
-    // --- THIS IS THE FIX ---
-    // We check if a SKU was provided. If not, we create a unique one.
-    // Using the current time in milliseconds guarantees uniqueness.
-    if (!data.sku) {
-      data.sku = `SKU-${Date.now()}`;
+    // --- LOGIC FOR BATCH UPLOAD (FROM EXCEL) ---
+    if (Array.isArray(body)) {
+      // FIX: Ensure no incoming 'id' is ever processed for batch creation
+      const incomingProducts = body.map((product, index) => ({
+        name: String(product.name || ''),
+        quantity: Number(product.quantity) || 0,
+        buyingPrice: Number(product.buyingPrice) || 0,
+        sellingPrice: Number(product.sellingPrice) || 0,
+        gstRate: Number(product.gstRate) || 0,
+        description: String(product.description || ''),
+        sku: product.sku ? String(product.sku) : `SKU-${Date.now()}-${index}`,
+        image: product.image || null,
+      }));
+      
+      const incomingSkus = incomingProducts.map(p => p.sku).filter(Boolean) as string[];
+      const existingProducts = await prisma.product.findMany({
+        where: { sku: { in: incomingSkus } },
+        select: { sku: true },
+      });
+      const existingSkus = new Set(existingProducts.map(p => p.sku));
+      const productsToCreate = incomingProducts.filter(p => !p.sku || !existingSkus.has(p.sku));
+
+      if (productsToCreate.length > 0) {
+        await prisma.product.createMany({
+          data: productsToCreate,
+        });
+      }
+    } else {
+      // --- LOGIC FOR SINGLE PRODUCT CREATION (FROM MODAL) ---
+      
+      // FIX: Explicitly remove 'id' from the incoming data to prevent errors.
+      const { id, sku, ...restOfBody } = body;
+
+      const newProductData = {
+        ...restOfBody,
+        sku: sku || `SKU-${Date.now()}`,
+      };
+      
+      await prisma.product.create({
+        data: newProductData,
+      });
     }
-    // --- END OF FIX ---
 
-    const newProduct = await prisma.product.create({
-      data: data, // Now `data` is guaranteed to have a unique SKU
+    // After creating, fetch and return the entire updated list
+    const allProducts = await prisma.product.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
-    return NextResponse.json(newProduct, { status: 201 });
+    return NextResponse.json(allProducts, { status: 201 });
   } catch (error) {
-    console.error("Failed to create product:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    console.error('Failed to create product(s):', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return new NextResponse(
+      JSON.stringify({ message: 'Failed to create product(s)', error: errorMessage }),
+      { status: 500 }
+    );
   }
 }
