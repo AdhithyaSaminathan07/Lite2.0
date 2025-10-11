@@ -1,10 +1,10 @@
-
 'use client';
 
 import React, { useState, useEffect, FC, ChangeEvent, useRef } from "react";
 import * as XLSX from "xlsx";
-import { Upload, Edit2, Plus, X, Trash2, Search, Image as ImageIcon } from "lucide-react";
+import { Upload, Edit2, Plus, X, Trash2, Search, Image as ImageIcon, Camera } from "lucide-react";
 import { motion, useAnimationControls, PanInfo } from "framer-motion";
+import { Html5Qrcode, Html5QrcodeScannerState } from "html5-qrcode";
 
 // --- INTERFACES AND UTILITIES ---
 export interface Product {
@@ -113,6 +113,10 @@ const Inventory: FC = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const readerId = "qr-reader"; // Define a constant ID for the reader element
+
   type NewProduct = Omit<Product, 'id'> & { sku?: string };
   const [newProduct, setNewProduct] = useState<NewProduct>({ name: "", sku: "", quantity: 0, buyingPrice: 0, sellingPrice: 0, gstRate: 0, image: '' });
 
@@ -127,6 +131,43 @@ const Inventory: FC = () => {
     };
     fetchProducts();
   }, []);
+
+  // --- Effect for managing the barcode scanner ---
+  useEffect(() => {
+    if (isScannerOpen) {
+      const scanner = new Html5Qrcode(readerId);
+      scannerRef.current = scanner;
+
+      const onScanSuccess = (decodedText: string) => {
+        if (showEditModal && editingProduct) {
+          setEditingProduct(prev => prev ? { ...prev, sku: decodedText } : null);
+        } else {
+          setNewProduct(prev => ({ ...prev, sku: decodedText }));
+        }
+        setIsScannerOpen(false);
+      };
+
+      const onScanFailure = (error: any) => {
+        // You can add logic here to handle scan failures if needed
+        // console.warn(`Code scan error = ${error}`);
+      };
+
+      const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+      
+      // Start scanning
+      scanner.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
+        .catch(err => console.error("Unable to start scanning.", err));
+    }
+
+    // Cleanup function
+    return () => {
+      if (scannerRef.current && scannerRef.current.isScanning) {
+        scannerRef.current.stop()
+          .then(() => console.log("Scanner stopped successfully."))
+          .catch(err => console.error("Failed to stop scanner.", err));
+      }
+    };
+  }, [isScannerOpen, showEditModal, editingProduct]); // Dependency array
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -243,8 +284,7 @@ const Inventory: FC = () => {
         body: JSON.stringify(updatedProduct),
       });
       setProducts(products.map(p => p.id === editingProduct.id ? updatedProduct : p));
-      setShowEditModal(false);
-      resetImageState();
+      closeModal();
     } catch (error) {
       console.error("Error updating product:", error);
     }
@@ -288,8 +328,7 @@ const Inventory: FC = () => {
       }
       const allProducts: Product[] = await response.json();
       setProducts(allProducts);
-      setShowAddModal(false);
-      resetImageState();
+      closeModal();
     } catch (error) {
       console.error("Error creating product:", error);
       alert(`Failed to create product: ${(error as Error).message}`);
@@ -307,10 +346,15 @@ const Inventory: FC = () => {
     }
     setSwipedProductId(null);
   };
+  
+  const handleScanBarcode = () => {
+    setIsScannerOpen(true);
+  };
 
   const closeModal = () => {
     setShowAddModal(false);
     setShowEditModal(false);
+    setIsScannerOpen(false); // Make sure to close scanner when modal closes
     resetImageState();
   };
 
@@ -420,109 +464,133 @@ const Inventory: FC = () => {
             </div>
 
             <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
-
-            <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-rose-500 rounded-full"></span>
-                  Product Image
-                </label>
-                <div
-                    className="w-full h-40 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center cursor-pointer hover:border-indigo-500 transition-colors"
-                    onClick={() => fileInputRef.current?.click()}
-                >
-                    <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} className="hidden" />
-                    {imagePreview ? (
-                        <img src={imagePreview} alt="Product Preview" className="w-full h-full object-contain p-2" />
-                    ) : (
-                        <div className="text-center text-gray-500">
-                            <ImageIcon className="w-10 h-10 mx-auto mb-2" />
-                            <p>Click to upload an image</p>
-                        </div>
-                    )}
+             {isScannerOpen ? (
+                <div className="space-y-4">
+                  {/* This div is where the scanner will be rendered */}
+                  <div id={readerId} className="w-full rounded-xl overflow-hidden border-2 border-gray-200" />
+                  <button 
+                    onClick={() => setIsScannerOpen(false)} 
+                    className="w-full px-4 py-2.5 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 font-medium transition-colors"
+                   >
+                     Cancel Scan
+                   </button>
                 </div>
-            </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
-                  Product Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter product name"
-                  className="w-full border-2 border-gray-200 px-4 py-3 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all outline-none"
-                  value={showEditModal ? editingProduct?.name : newProduct.name}
-                  onChange={(e) => showEditModal ? setEditingProduct({ ...editingProduct!, name: e.target.value }) : setNewProduct({ ...newProduct, name: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                  Product ID
-                </label>
-                <input
-                  type="text"
-                  placeholder="SKU, Barcode, or custom ID"
-                  className="w-full border-2 border-gray-200 px-4 py-3 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all outline-none font-mono text-sm"
-                  value={showEditModal ? (editingProduct?.sku || '') : (newProduct.sku || '')}
-                  onChange={(e) => {
-                    if (showEditModal) {
-                      setEditingProduct({ ...editingProduct!, sku: e.target.value });
-                    } else {
-                      setNewProduct({ ...newProduct, sku: e.target.value });
-                    }
-                  }}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              ) : (
+              <>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                    Quantity
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="0"
-                    className="w-full border-2 border-gray-200 px-4 py-3 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
-                    value={showEditModal ? (editingProduct?.quantity || '') : (newProduct.quantity || '')} // <<< CHANGED
-                    onChange={(e) => showEditModal ? setEditingProduct({ ...editingProduct!, quantity: Number(e.target.value) || 0 }) : setNewProduct({ ...newProduct, quantity: Number(e.target.value) || 0 })}
-                  />
+                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-rose-500 rounded-full"></span>
+                      Product Image
+                    </label>
+                    <div
+                        className="w-full h-40 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center cursor-pointer hover:border-indigo-500 transition-colors"
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} className="hidden" />
+                        {imagePreview ? (
+                            <img src={imagePreview} alt="Product Preview" className="w-full h-full object-contain p-2" />
+                        ) : (
+                            <div className="text-center text-gray-500">
+                                <ImageIcon className="w-10 h-10 mx-auto mb-2" />
+                                <p>Click to upload an image</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                    Selling Price
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₹</span>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
+                      Product Name
+                    </label>
                     <input
-                      type="number"
-                      placeholder="0.00"
-                      className="w-full border-2 border-gray-200 pl-8 pr-4 py-3 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all outline-none"
-                      value={showEditModal ? (editingProduct?.sellingPrice || '') : (newProduct.sellingPrice || '')} // <<< CHANGED
-                      onChange={(e) => showEditModal ? setEditingProduct({ ...editingProduct!, sellingPrice: Number(e.target.value) || 0 }) : setNewProduct({ ...newProduct, sellingPrice: Number(e.target.value) || 0 })}
+                      type="text"
+                      placeholder="Enter product name"
+                      className="w-full border-2 border-gray-200 px-4 py-3 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all outline-none"
+                      value={showEditModal ? editingProduct?.name : newProduct.name}
+                      onChange={(e) => showEditModal ? setEditingProduct({ ...editingProduct!, name: e.target.value }) : setNewProduct({ ...newProduct, name: e.target.value })}
                     />
                   </div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
-                  GST Rate
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    placeholder="0"
-                    className="w-full border-2 border-gray-200 px-4 py-3 pr-12 rounded-xl focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all outline-none"
-                    value={showEditModal ? (editingProduct?.gstRate || '') : (newProduct.gstRate || '')} // <<< CHANGED
-                    onChange={(e) => showEditModal ? setEditingProduct({ ...editingProduct!, gstRate: Number(e.target.value) || 0 }) : setNewProduct({ ...newProduct, gstRate: Number(e.target.value) || 0 })}
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">%</span>
-                </div>
-              </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                      Product ID
+                    </label>
+                    <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="SKU, Barcode, or custom ID"
+                          className="w-full border-2 border-gray-200 px-4 py-3 pr-14 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all outline-none font-mono text-sm"
+                          value={showEditModal ? (editingProduct?.sku || '') : (newProduct.sku || '')}
+                          onChange={(e) => {
+                            if (showEditModal) {
+                              setEditingProduct({ ...editingProduct!, sku: e.target.value });
+                            } else {
+                              setNewProduct({ ...newProduct, sku: e.target.value });
+                            }
+                          }}
+                        />
+                        <button 
+                            type="button" 
+                            onClick={handleScanBarcode} 
+                            className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center justify-center w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 shadow-md shadow-indigo-500/20 transition-all active:scale-95"
+                            aria-label="Scan barcode"
+                        >
+                            <Camera className="w-5 h-5" />
+                        </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                        Quantity
+                      </label>
+                      <input
+                        type="number"
+                        placeholder="0"
+                        className="w-full border-2 border-gray-200 px-4 py-3 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                        value={showEditModal ? (editingProduct?.quantity ?? '') : (newProduct.quantity ?? '')}
+                        onChange={(e) => showEditModal ? setEditingProduct({ ...editingProduct!, quantity: Number(e.target.value) || 0 }) : setNewProduct({ ...newProduct, quantity: Number(e.target.value) || 0 })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                        <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                        Selling Price
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₹</span>
+                        <input
+                          type="number"
+                          placeholder="0.00"
+                          className="w-full border-2 border-gray-200 pl-8 pr-4 py-3 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all outline-none"
+                          value={showEditModal ? (editingProduct?.sellingPrice ?? '') : (newProduct.sellingPrice ?? '')}
+                          onChange={(e) => showEditModal ? setEditingProduct({ ...editingProduct!, sellingPrice: Number(e.target.value) || 0 }) : setNewProduct({ ...newProduct, sellingPrice: Number(e.target.value) || 0 })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+                      GST Rate
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        placeholder="0"
+                        className="w-full border-2 border-gray-200 px-4 py-3 pr-12 rounded-xl focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all outline-none"
+                        value={showEditModal ? (editingProduct?.gstRate ?? '') : (newProduct.gstRate ?? '')}
+                        onChange={(e) => showEditModal ? setEditingProduct({ ...editingProduct!, gstRate: Number(e.target.value) || 0 }) : setNewProduct({ ...newProduct, gstRate: Number(e.target.value) || 0 })}
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">%</span>
+                    </div>
+                  </div>
+              </>
+              )}
             </div>
 
             <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t">
