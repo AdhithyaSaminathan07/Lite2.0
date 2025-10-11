@@ -9,6 +9,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@prisma/client": "^6.17.0",
     "framer-motion": "^12.23.22",
     "html5-qrcode": "^2.3.8",

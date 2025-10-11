@@ -436,7 +436,16 @@ const Inventory: FC = () => {
         ))}
       </div>
 
-      <div className="sm:hidden fixed bottom-4 right-4 flex flex-col items-center gap-3 z-20">
+      {/* <div className="sm:hidden fixed bottom-4 right-4 flex flex-col items-center gap-3 z-20">
+        <label className="w-14 h-14 flex items-center justify-center cursor-pointer bg-green-600 hover:bg-green-700 text-white rounded-full shadow-lg">
+          <Upload className="w-6 h-6" /><input type="file" accept=".xlsx, .xls" onChange={handleExcelUpload} className="hidden" />
+        </label>
+        <button onClick={openAddModal} className="w-14 h-14 flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg">
+          <Plus className="w-6 h-6" />
+        </button>
+      </div> */}
+
+       <div className="sm:hidden fixed bottom-20 right-4 flex flex-col items-center gap-3 z-50">
         <label className="w-14 h-14 flex items-center justify-center cursor-pointer bg-green-600 hover:bg-green-700 text-white rounded-full shadow-lg">
           <Upload className="w-6 h-6" /><input type="file" accept=".xlsx, .xls" onChange={handleExcelUpload} className="hidden" />
         </label>
