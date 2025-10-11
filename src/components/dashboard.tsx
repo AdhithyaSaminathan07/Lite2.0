@@ -1,29 +1,26 @@
-
-
+ 
+// In: src/components/dashboard.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function Dashboard() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  // 1. Use the official 'useSession' hook to get session data and status
+  const { data: session, status } = useSession();
   const router = useRouter();
 
+  // 2. This useEffect now correctly checks the session 'status'
   useEffect(() => {
-    // Ensure code only runs in the browser
-    if (typeof window !== "undefined" && window.localStorage) {
-      const authStatus = window.localStorage.getItem("isAuthenticated");
-
-      if (authStatus) {
-        setIsAuthenticated(true);
-      } else {
-        router.push("/auth");
-      }
+    
+    if (status === "unauthenticated") {
+      router.push("/"); // Redirect to your main login page
     }
-  }, [router]);
+  }, [status, router]);
 
-  // Show loading while checking auth
-  if (!isAuthenticated) {
+  // 3. Show a loading state while the session is being verified
+  if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
@@ -31,14 +28,29 @@ export default function Dashboard() {
     );
   }
 
-  // Dashboard content
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <h2 className="text-3xl font-bold text-gray-900">
-          Welcome to Your Dashboard!
-        </h2>
+  // 4. Only render the dashboard content if the user is authenticated
+  if (status === "authenticated") {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-gray-900">
+            Welcome to Your Dashboard, {session.user?.name}!
+          </h2>
+          <p className="mt-2 text-gray-700">
+            Your email is: {session.user?.email}
+          </p>
+
+          {/* <button
+            onClick={() => signOut({ callbackUrl: '/' })} // Sign out and return to the login page
+            className="mt-8 px-6 py-2 font-semibold text-white bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700"
+          >
+            Sign Out
+          </button> */}
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  // If status is 'unauthenticated', the redirect is happening, so we return null.
+  return null;
 }
