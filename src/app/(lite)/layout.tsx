@@ -42,6 +42,7 @@
 // }
 
 
+// src/app/(lite)/layout.tsx
 'use client';
 
 import React, { useState } from 'react';
@@ -63,7 +64,7 @@ export default function AppLayout({
       />
 
       <div className="flex-1 flex flex-col">
-        {/* ✅ FIX: Removed the unnecessary 'isMobileOpen' prop. */}
+        {/* CORRECTED: Removed the isMobileOpen prop from MobileHeader */}
         <MobileHeader 
           onMenuClick={() => setIsMobileOpen(true)} 
         />
