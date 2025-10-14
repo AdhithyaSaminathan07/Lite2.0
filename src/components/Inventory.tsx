@@ -638,6 +638,17 @@ export interface Product {
   sku?: string;
 }
 
+// ✅ FIX: Added a specific interface for rows read from the Excel file
+interface ExcelRow {
+  "Product ID"?: string | number;
+  "Product Name"?: string;
+  "Quantity"?: number;
+  "Buying Price"?: number;
+  "Selling Price"?: number;
+  "GST Rate"?: number;
+}
+
+
 const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -664,7 +675,7 @@ const MobileProductCard: FC<MobileProductCardProps> = ({ product, isSwiped, onSw
     }
   }, [isSwiped, controls]);
 
-  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo): void => {
+  const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo): void => {
     if (info.offset.x < -ACTION_WIDTH / 2) {
       controls.start({ x: -ACTION_WIDTH });
       onSwipe(product.id);
@@ -693,7 +704,6 @@ const MobileProductCard: FC<MobileProductCardProps> = ({ product, isSwiped, onSw
         animate={controls} transition={{ type: "spring", stiffness: 300, damping: 30 }}
         onClick={() => { if (isSwiped) { controls.start({ x: 0 }); onSwipe(null); } }}
       >
-        {/* ✅ FIX: Conditionally render Image component only if product.image exists */}
         {product.image ? (
            <Image
              src={product.image}
@@ -766,14 +776,16 @@ const Inventory: FC = () => {
         }
         setIsScannerOpen(false);
       };
-
-      const onScanFailure = (error: Error) => {
-        // console.warn(`Code scan error = ${error.message}`);
+      
+      // ✅ FIX: Updated signature to (string) and prefixed unused variable with '_'
+      const onScanFailure = (_errorMessage: string) => {
+        // console.warn(`Code scan error = ${_errorMessage}`);
       };
 
       const config = { fps: 10, qrbox: { width: 250, height: 250 } };
       
-      scanner.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure as any)
+      // ✅ FIX: Removed 'as any' cast
+      scanner.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
         .catch(err => console.error("Unable to start scanning.", err));
     }
 
@@ -800,7 +812,8 @@ const Inventory: FC = () => {
       const workbook = XLSX.read(data, { type: "array" });
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
-      const rows: any[] = XLSX.utils.sheet_to_json(sheet);
+      // ✅ FIX: Used the specific ExcelRow interface instead of 'any[]'
+      const rows: ExcelRow[] = XLSX.utils.sheet_to_json(sheet);
 
       const uploadedProducts = rows.map((row) => ({
         sku: String(row["Product ID"] || ""),
@@ -1004,7 +1017,6 @@ const Inventory: FC = () => {
             {filteredProducts.map((p) => (
                 <tr key={p.id}>
                   <td className="px-3 py-2">
-                  {/* ✅ FIX: Conditionally render Image component only if p.image exists */}
                   {p.image ? (
                       <Image
                         src={p.image}
@@ -1095,7 +1107,16 @@ const Inventory: FC = () => {
                     >
                         <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} className="hidden" />
                         {imagePreview ? (
-                            <img src={imagePreview} alt="Product Preview" className="w-full h-full object-contain p-2" />
+                            // ✅ FIX: Replaced <img> with next/image and wrapped for layout
+                            <div className="relative w-full h-full">
+                               <Image
+                                   src={imagePreview}
+                                   alt="Product Preview"
+                                   layout="fill"
+                                   objectFit="contain"
+                                   className="p-2"
+                               />
+                            </div>
                         ) : (
                             <div className="text-center text-gray-500">
                                 <ImageIcon className="w-10 h-10 mx-auto mb-2" />

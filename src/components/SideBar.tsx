@@ -115,11 +115,9 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Package, Settings, CreditCard, LogOut } from 'lucide-react'; 
+import { Home, Package, Settings, CreditCard, LogOut } from 'lucide-react';
 
-// ✅ FIX: Changed from 'interface' to 'type' to resolve the error.
-type SidebarProps = {};
-
+// The NavLink component is correct as is.
 function NavLink({
   href,
   children,
@@ -144,7 +142,9 @@ function NavLink({
   );
 }
 
-export function Sidebar({}: SidebarProps) {
+// ✅ FIX: Removed the unused props parameter '{}' from the function signature.
+// The SidebarProps type alias is no longer needed.
+export function Sidebar() {
   const router = useRouter();
 
   const handleLogout = () => {
@@ -201,10 +201,10 @@ export function Sidebar({}: SidebarProps) {
   );
 }
 
-// ✅ FIX: Changed from 'interface' to 'type' to resolve the error.
-type MobileHeaderProps = {};
 
-export function MobileHeader({}: MobileHeaderProps) {
+// ✅ FIX: Removed the unused props parameter '{}' from the function signature.
+// The MobileHeaderProps type alias is no longer needed.
+export function MobileHeader() {
   return (
     <header className="fixed left-0 right-0 top-0 z-30 flex h-14 items-center border-b bg-white px-4 shadow-sm lg:hidden">
       <h1 className="text-lg font-semibold text-gray-900">BillzzyLite</h1>
