@@ -380,6 +380,7 @@
 //         </div>
 //       </div>
 
+//       {/* Desktop Table View */}
 //       <div className="hidden md:block overflow-x-auto shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
 //         <table className="min-w-full divide-y divide-gray-300">
 //           <thead className="bg-gray-50">
@@ -430,21 +431,14 @@
 //         </table>
 //       </div>
 
+//       {/* Mobile Card View */}
 //       <div className="md:hidden space-y-3 pb-20">
 //         {filteredProducts.map((p) => (
 //           <MobileProductCard key={p.id} product={p} isSwiped={swipedProductId === p.id} onSwipe={setSwipedProductId} onEdit={openEditModal} onDelete={handleDeleteProduct} />
 //         ))}
 //       </div>
-
-//       {/* <div className="sm:hidden fixed bottom-4 right-4 flex flex-col items-center gap-3 z-20">
-//         <label className="w-14 h-14 flex items-center justify-center cursor-pointer bg-green-600 hover:bg-green-700 text-white rounded-full shadow-lg">
-//           <Upload className="w-6 h-6" /><input type="file" accept=".xlsx, .xls" onChange={handleExcelUpload} className="hidden" />
-//         </label>
-//         <button onClick={openAddModal} className="w-14 h-14 flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg">
-//           <Plus className="w-6 h-6" />
-//         </button>
-//       </div> */}
-
+      
+//       {/* Mobile Floating Action Buttons */}
 //        <div className="sm:hidden fixed bottom-20 right-4 flex flex-col items-center gap-3 z-50">
 //         <label className="w-14 h-14 flex items-center justify-center cursor-pointer bg-green-600 hover:bg-green-700 text-white rounded-full shadow-lg">
 //           <Upload className="w-6 h-6" /><input type="file" accept=".xlsx, .xls" onChange={handleExcelUpload} className="hidden" />
@@ -454,6 +448,7 @@
 //         </button>
 //       </div>
 
+//       {/* Add/Edit Modal */}
 //       {(showAddModal || (showEditModal && editingProduct)) && (
 //         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-in fade-in duration-200">
 //           <motion.div
@@ -622,14 +617,14 @@
 
 // export default Inventory;
 
-
 'use client';
 
 import React, { useState, useEffect, FC, ChangeEvent, useRef } from "react";
 import * as XLSX from "xlsx";
 import { Upload, Edit2, Plus, X, Trash2, Search, Image as ImageIcon, Camera } from "lucide-react";
 import { motion, useAnimationControls, PanInfo } from "framer-motion";
-import { Html5Qrcode, Html5QrcodeScannerState } from "html5-qrcode";
+import { Html5Qrcode } from "html5-qrcode";
+import Image from "next/image"; // Import Next.js Image component
 
 // --- INTERFACES AND UTILITIES ---
 export interface Product {
@@ -682,8 +677,6 @@ const MobileProductCard: FC<MobileProductCardProps> = ({ product, isSwiped, onSw
     return quantity * sellingPrice * (1 + gstRate / 100);
   };
 
-  const hasValidImage = product.image && product.image.startsWith('/');
-
   return (
     <div className="relative w-full bg-gray-200 rounded-lg overflow-hidden shadow-sm">
       <div className="absolute inset-y-0 right-0 flex" style={{ width: ACTION_WIDTH }}>
@@ -700,10 +693,13 @@ const MobileProductCard: FC<MobileProductCardProps> = ({ product, isSwiped, onSw
         animate={controls} transition={{ type: "spring", stiffness: 300, damping: 30 }}
         onClick={() => { if (isSwiped) { controls.start({ x: 0 }); onSwipe(null); } }}
       >
-        {hasValidImage ? (
-           <img
+        {/* ✅ FIX: Conditionally render Image component only if product.image exists */}
+        {product.image ? (
+           <Image
              src={product.image}
              alt={product.name}
+             width={64}
+             height={64}
              className="w-16 h-16 object-cover rounded-md bg-gray-100 flex-shrink-0"
            />
          ) : (
@@ -740,7 +736,7 @@ const Inventory: FC = () => {
 
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
-  const readerId = "qr-reader"; // Define a constant ID for the reader element
+  const readerId = "qr-reader";
 
   type NewProduct = Omit<Product, 'id'> & { sku?: string };
   const [newProduct, setNewProduct] = useState<NewProduct>({ name: "", sku: "", quantity: 0, buyingPrice: 0, sellingPrice: 0, gstRate: 0, image: '' });
@@ -757,7 +753,6 @@ const Inventory: FC = () => {
     fetchProducts();
   }, []);
 
-  // --- Effect for managing the barcode scanner ---
   useEffect(() => {
     if (isScannerOpen) {
       const scanner = new Html5Qrcode(readerId);
@@ -772,27 +767,23 @@ const Inventory: FC = () => {
         setIsScannerOpen(false);
       };
 
-      const onScanFailure = (error: any) => {
-        // You can add logic here to handle scan failures if needed
-        // console.warn(`Code scan error = ${error}`);
+      const onScanFailure = (error: Error) => {
+        // console.warn(`Code scan error = ${error.message}`);
       };
 
       const config = { fps: 10, qrbox: { width: 250, height: 250 } };
       
-      // Start scanning
-      scanner.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
+      scanner.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure as any)
         .catch(err => console.error("Unable to start scanning.", err));
     }
 
-    // Cleanup function
     return () => {
       if (scannerRef.current && scannerRef.current.isScanning) {
         scannerRef.current.stop()
-          .then(() => console.log("Scanner stopped successfully."))
           .catch(err => console.error("Failed to stop scanner.", err));
       }
     };
-  }, [isScannerOpen, showEditModal, editingProduct]); // Dependency array
+  }, [isScannerOpen, showEditModal, editingProduct]);
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -881,12 +872,8 @@ const Inventory: FC = () => {
     if (imageFile) {
         const formData = new FormData();
         formData.append('file', imageFile);
-
         try {
-            const uploadResponse = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData,
-            });
+            const uploadResponse = await fetch('/api/upload', { method: 'POST', body: formData });
             const uploadData = await uploadResponse.json();
             if (uploadData.success) {
                 imageUrl = uploadData.path;
@@ -920,12 +907,8 @@ const Inventory: FC = () => {
     if (imageFile) {
         const formData = new FormData();
         formData.append('file', imageFile);
-
         try {
-            const uploadResponse = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData,
-            });
+            const uploadResponse = await fetch('/api/upload', { method: 'POST', body: formData });
             const uploadData = await uploadResponse.json();
             if (uploadData.success) {
                 imageUrl = uploadData.path;
@@ -979,7 +962,7 @@ const Inventory: FC = () => {
   const closeModal = () => {
     setShowAddModal(false);
     setShowEditModal(false);
-    setIsScannerOpen(false); // Make sure to close scanner when modal closes
+    setIsScannerOpen(false);
     resetImageState();
   };
 
@@ -1005,7 +988,6 @@ const Inventory: FC = () => {
         </div>
       </div>
 
-      {/* Desktop Table View */}
       <div className="hidden md:block overflow-x-auto shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
         <table className="min-w-full divide-y divide-gray-300">
           <thead className="bg-gray-50">
@@ -1019,15 +1001,16 @@ const Inventory: FC = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {filteredProducts.map((p) => {
-               const hasValidImage = p.image && p.image.startsWith('/');
-               return (
+            {filteredProducts.map((p) => (
                 <tr key={p.id}>
                   <td className="px-3 py-2">
-                  {hasValidImage ? (
-                      <img
+                  {/* ✅ FIX: Conditionally render Image component only if p.image exists */}
+                  {p.image ? (
+                      <Image
                         src={p.image}
                         alt={p.name}
+                        width={56}
+                        height={56}
                         className="w-14 h-14 object-cover rounded-md"
                       />
                     ) : (
@@ -1050,21 +1033,18 @@ const Inventory: FC = () => {
                     </div>
                   </td>
                 </tr>
-               )
-            })}
+            ))}
           </tbody>
         </table>
       </div>
 
-      {/* Mobile Card View */}
       <div className="md:hidden space-y-3 pb-20">
         {filteredProducts.map((p) => (
           <MobileProductCard key={p.id} product={p} isSwiped={swipedProductId === p.id} onSwipe={setSwipedProductId} onEdit={openEditModal} onDelete={handleDeleteProduct} />
         ))}
       </div>
       
-      {/* Mobile Floating Action Buttons */}
-       <div className="sm:hidden fixed bottom-20 right-4 flex flex-col items-center gap-3 z-50">
+      <div className="sm:hidden fixed bottom-20 right-4 flex flex-col items-center gap-3 z-50">
         <label className="w-14 h-14 flex items-center justify-center cursor-pointer bg-green-600 hover:bg-green-700 text-white rounded-full shadow-lg">
           <Upload className="w-6 h-6" /><input type="file" accept=".xlsx, .xls" onChange={handleExcelUpload} className="hidden" />
         </label>
@@ -1073,7 +1053,6 @@ const Inventory: FC = () => {
         </button>
       </div>
 
-      {/* Add/Edit Modal */}
       {(showAddModal || (showEditModal && editingProduct)) && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-in fade-in duration-200">
           <motion.div
@@ -1095,7 +1074,6 @@ const Inventory: FC = () => {
             <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
              {isScannerOpen ? (
                 <div className="space-y-4">
-                  {/* This div is where the scanner will be rendered */}
                   <div id={readerId} className="w-full rounded-xl overflow-hidden border-2 border-gray-200" />
                   <button 
                     onClick={() => setIsScannerOpen(false)} 
@@ -1136,8 +1114,8 @@ const Inventory: FC = () => {
                       type="text"
                       placeholder="Enter product name"
                       className="w-full border-2 border-gray-200 px-4 py-3 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all outline-none"
-                      value={showEditModal ? editingProduct?.name : newProduct.name}
-                      onChange={(e) => showEditModal ? setEditingProduct({ ...editingProduct!, name: e.target.value }) : setNewProduct({ ...newProduct, name: e.target.value })}
+                      value={showEditModal && editingProduct ? editingProduct.name : newProduct.name}
+                      onChange={(e) => showEditModal && editingProduct ? setEditingProduct({ ...editingProduct, name: e.target.value }) : setNewProduct({ ...newProduct, name: e.target.value })}
                     />
                   </div>
 
@@ -1151,10 +1129,10 @@ const Inventory: FC = () => {
                           type="text"
                           placeholder="SKU, Barcode, or custom ID"
                           className="w-full border-2 border-gray-200 px-4 py-3 pr-14 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all outline-none font-mono text-sm"
-                          value={showEditModal ? (editingProduct?.sku || '') : (newProduct.sku || '')}
+                          value={showEditModal && editingProduct ? (editingProduct.sku || '') : (newProduct.sku || '')}
                           onChange={(e) => {
-                            if (showEditModal) {
-                              setEditingProduct({ ...editingProduct!, sku: e.target.value });
+                            if (showEditModal && editingProduct) {
+                              setEditingProduct({ ...editingProduct, sku: e.target.value });
                             } else {
                               setNewProduct({ ...newProduct, sku: e.target.value });
                             }
@@ -1181,8 +1159,8 @@ const Inventory: FC = () => {
                         type="number"
                         placeholder="0"
                         className="w-full border-2 border-gray-200 px-4 py-3 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
-                        value={showEditModal ? (editingProduct?.quantity ?? '') : (newProduct.quantity ?? '')}
-                        onChange={(e) => showEditModal ? setEditingProduct({ ...editingProduct!, quantity: Number(e.target.value) || 0 }) : setNewProduct({ ...newProduct, quantity: Number(e.target.value) || 0 })}
+                        value={showEditModal && editingProduct ? (editingProduct.quantity ?? '') : (newProduct.quantity ?? '')}
+                        onChange={(e) => showEditModal && editingProduct ? setEditingProduct({ ...editingProduct, quantity: Number(e.target.value) || 0 }) : setNewProduct({ ...newProduct, quantity: Number(e.target.value) || 0 })}
                       />
                     </div>
                     <div className="space-y-2">
@@ -1196,8 +1174,8 @@ const Inventory: FC = () => {
                           type="number"
                           placeholder="0.00"
                           className="w-full border-2 border-gray-200 pl-8 pr-4 py-3 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all outline-none"
-                          value={showEditModal ? (editingProduct?.sellingPrice ?? '') : (newProduct.sellingPrice ?? '')}
-                          onChange={(e) => showEditModal ? setEditingProduct({ ...editingProduct!, sellingPrice: Number(e.target.value) || 0 }) : setNewProduct({ ...newProduct, sellingPrice: Number(e.target.value) || 0 })}
+                          value={showEditModal && editingProduct ? (editingProduct.sellingPrice ?? '') : (newProduct.sellingPrice ?? '')}
+                          onChange={(e) => showEditModal && editingProduct ? setEditingProduct({ ...editingProduct, sellingPrice: Number(e.target.value) || 0 }) : setNewProduct({ ...newProduct, sellingPrice: Number(e.target.value) || 0 })}
                         />
                       </div>
                     </div>
@@ -1212,8 +1190,8 @@ const Inventory: FC = () => {
                         type="number"
                         placeholder="0"
                         className="w-full border-2 border-gray-200 px-4 py-3 pr-12 rounded-xl focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all outline-none"
-                        value={showEditModal ? (editingProduct?.gstRate ?? '') : (newProduct.gstRate ?? '')}
-                        onChange={(e) => showEditModal ? setEditingProduct({ ...editingProduct!, gstRate: Number(e.target.value) || 0 }) : setNewProduct({ ...newProduct, gstRate: Number(e.target.value) || 0 })}
+                        value={showEditModal && editingProduct ? (editingProduct.gstRate ?? '') : (newProduct.gstRate ?? '')}
+                        onChange={(e) => showEditModal && editingProduct ? setEditingProduct({ ...editingProduct, gstRate: Number(e.target.value) || 0 }) : setNewProduct({ ...newProduct, gstRate: Number(e.target.value) || 0 })}
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">%</span>
                     </div>
