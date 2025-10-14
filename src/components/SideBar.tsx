@@ -110,14 +110,27 @@
 //   );
 // }
 
-
 'use client';
 
+import React, { Dispatch, SetStateAction } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Package, Settings, CreditCard, LogOut } from 'lucide-react';
+import { Home, Package, Settings, CreditCard, LogOut, Menu, X } from 'lucide-react';
 
-// The NavLink component is correct as is.
+//=========== PROPS DEFINITIONS ===========//
+// 1. Define the props for the Sidebar component
+interface SidebarProps {
+  isMobileOpen: boolean;
+  setIsMobileOpen: Dispatch<SetStateAction<boolean>>;
+}
+
+// 2. Define the props for the MobileHeader component
+interface MobileHeaderProps {
+  onMenuClick: () => void;
+}
+
+
+//=========== NAVLINK COMPONENT (No changes needed) ===========//
 function NavLink({
   href,
   children,
@@ -142,9 +155,10 @@ function NavLink({
   );
 }
 
-// ✅ FIX: Removed the unused props parameter '{}' from the function signature.
-// The SidebarProps type alias is no longer needed.
-export function Sidebar() {
+
+//=========== SIDEBAR COMPONENT (Corrected) ===========//
+// 3. Apply the props to the Sidebar function
+export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
   const router = useRouter();
 
   const handleLogout = () => {
@@ -154,60 +168,81 @@ export function Sidebar() {
     router.push('/');
   };
 
+  // Close the sidebar when a nav link is clicked on mobile
+  const handleLinkClick = () => {
+    setIsMobileOpen(false);
+  };
+
   return (
-    <aside
-      id="sidebar"
-      className="hidden w-64 flex-col border-r bg-white lg:relative lg:flex"
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between border-b p-4">
-        <h1 className="text-xl font-bold text-indigo-600">BillzzyLite</h1>
-      </div>
+    <>
+      {/* Overlay for mobile view, closes sidebar on click */}
+      <div
+        className={`fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden transition-opacity ${
+          isMobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={() => setIsMobileOpen(false)}
+      ></div>
 
-      {/* Main navigation */}
-      <nav className="flex flex-1 flex-col space-y-1 p-4">
-        <NavLink href="/dashboard">
-          <Home className="mr-3 h-5 w-5" />
-          <span>Dashboard</span>
-        </NavLink>
+      {/* The actual sidebar */}
+      <aside
+        id="sidebar"
+        // 4. Use isMobileOpen to control visibility on mobile screens
+        className={`fixed top-0 left-0 h-full w-64 flex-col border-r bg-white z-40 lg:relative lg:flex transform transition-transform duration-300 ease-in-out ${
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+        } lg:translate-x-0`}
+      >
+        <div className="flex items-center justify-between border-b p-4">
+          <h1 className="text-xl font-bold text-indigo-600">BillzzyLite</h1>
+          {/* Mobile close button */}
+          <button onClick={() => setIsMobileOpen(false)} className="lg:hidden text-gray-500 hover:text-gray-800">
+            <X size={24} />
+          </button>
+        </div>
 
-        <NavLink href="/inventory">
-          <Package className="mr-3 h-5 w-5" />
-          <span>Inventory</span>
-        </NavLink>
+        <nav onClick={handleLinkClick} className="flex flex-1 flex-col space-y-1 p-4">
+          <NavLink href="/dashboard">
+            <Home className="mr-3 h-5 w-5" />
+            <span>Dashboard</span>
+          </NavLink>
+          <NavLink href="/inventory">
+            <Package className="mr-3 h-5 w-5" />
+            <span>Inventory</span>
+          </NavLink>
+          <NavLink href="/billing">
+            <CreditCard className="mr-3 h-5 w-5" />
+            <span>Billing</span>
+          </NavLink>
+          <NavLink href="/settings">
+            <Settings className="mr-3 h-5 w-5" />
+            <span>Settings</span>
+          </NavLink>
+        </nav>
 
-        <NavLink href="/billing">
-          <CreditCard className="mr-3 h-5 w-5" />
-          <span>Billing</span>
-        </NavLink>
-
-        <NavLink href="/settings">
-          <Settings className="mr-3 h-5 w-5" />
-          <span>Settings</span>
-        </NavLink>
-      </nav>
-
-      {/* Logout section */}
-      <div className="border-t p-4">
-        <button
-          onClick={handleLogout}
-          className="flex w-full items-center rounded-lg px-4 py-3 text-red-600 transition-colors hover:bg-red-50"
-        >
-          <LogOut className="mr-3 h-5 w-5" />
-          <span className="font-medium">Logout</span>
-        </button>
-      </div>
-    </aside>
+        <div className="border-t p-4">
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center rounded-lg px-4 py-3 text-red-600 transition-colors hover:bg-red-50"
+          >
+            <LogOut className="mr-3 h-5 w-5" />
+            <span className="font-medium">Logout</span>
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }
 
 
-// ✅ FIX: Removed the unused props parameter '{}' from the function signature.
-// The MobileHeaderProps type alias is no longer needed.
-export function MobileHeader() {
+//=========== MOBILEHEADER COMPONENT (Corrected) ===========//
+// 5. Apply the props to the MobileHeader function
+export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
   return (
-    <header className="fixed left-0 right-0 top-0 z-30 flex h-14 items-center border-b bg-white px-4 shadow-sm lg:hidden">
+    <header className="fixed left-0 right-0 top-0 z-20 flex h-14 items-center justify-between border-b bg-white px-4 shadow-sm lg:hidden">
       <h1 className="text-lg font-semibold text-gray-900">BillzzyLite</h1>
+      {/* The hamburger menu button */}
+      <button onClick={onMenuClick} className="text-gray-600 hover:text-gray-900">
+        <Menu size={24} />
+      </button>
     </header>
   );
 }
