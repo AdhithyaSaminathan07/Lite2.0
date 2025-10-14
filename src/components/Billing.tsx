@@ -706,7 +706,7 @@ export default function BillingPage() {
         });
         return;
     }
-    const message = [...cart].reverse().map(p => `${p.name} (x${p.quantity}) - ₹${(p.price * item.quantity).toFixed(2)}`).join('\n');
+    const message = [...cart].reverse().map(p => `${p.name} (x${p.quantity}) - ₹${(p.price * p.quantity).toFixed(2)}`).join('\n');
     const fullMessage = `Hello! Here is your bill from ${merchantName}:\n\n${message}\n\n*Grand Total: ₹${totalAmount.toFixed(2)}*`;
     window.open(`https://wa.me/${whatsAppNumber}?text=${encodeURIComponent(fullMessage)}`, '_blank');
     setShowWhatsAppInput(false);
