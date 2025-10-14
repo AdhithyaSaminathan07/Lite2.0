@@ -1,13 +1,12 @@
 
-// // --- You can copy and paste this entire file to replace your existing one ---
-
 // 'use client';
 
 // import React, { useState, useEffect, useRef } from 'react';
 // import { useSession } from 'next-auth/react';
 // import BarcodeScannerComponent from 'react-qr-barcode-scanner';
 // import QRCode from 'react-qr-code';
-// import { Scan, Trash2, Send, CreditCard, CheckCircle, X, Printer, DollarSign, MessageSquare } from 'lucide-react'; // Added MessageSquare
+// // ✅ I have added the "RefreshCw" icon for your new button
+// import { Scan, Trash2, Send, CreditCard, CheckCircle, X, Printer, DollarSign, MessageSquare, RefreshCw } from 'lucide-react'; 
 
 // // --- TYPE DEFINITIONS ---
 // type CartItem = {
@@ -84,8 +83,6 @@
 //   const [showSuggestions, setShowSuggestions] = useState(false);
 //   const [merchantUpi, setMerchantUpi] = useState('');
 //   const suggestionsRef = useRef<HTMLDivElement | null>(null);
-
-//   // ✅ NEW STATE for a better WhatsApp input
 //   const [showWhatsAppInput, setShowWhatsAppInput] = useState(false);
 //   const [whatsAppNumber, setWhatsAppNumber] = useState('');
 
@@ -179,6 +176,7 @@
   
 //   const deleteCartItem = (id: number) => setCart(cart.filter((item) => item.id !== id));
 
+//   // ✅ Your original function, now used for auto-reset after payment
 //   const handleTransactionDone = () => {
 //     setCart([]);
 //     setSelectedPayment('');
@@ -186,7 +184,13 @@
 //     setShowFinalizeOptions(false);
 //   };
 
-//   // ✅ UPDATED WHATSAPP FUNCTION - No more prompt!
+//   // ✅ NEW function for the manual reset button, which includes confirmation
+//   const handleStartNewBill = () => {
+//     if (window.confirm('Are you sure you want to clear the current bill and start over?')) {
+//         handleTransactionDone(); // Resets everything
+//     }
+//   };
+
 //   const handleWhatsAppShare = () => {
 //     if (!whatsAppNumber.trim() || !/^\d{10,15}$/.test(whatsAppNumber)) {
 //         alert("Please enter a valid WhatsApp number (e.g., 919876543210).");
@@ -195,8 +199,8 @@
 //     const message = [...cart].reverse().map(p => `${p.name} (x${p.quantity}) - ₹${(p.price * p.quantity).toFixed(2)}`).join('\n');
 //     const fullMessage = `Hello! Here is your bill from ${merchantName}:\n\n${message}\n\n*Grand Total: ₹${totalAmount.toFixed(2)}*`;
 //     window.open(`https://wa.me/${whatsAppNumber}?text=${encodeURIComponent(fullMessage)}`, '_blank');
-//     setShowWhatsAppInput(false); // Hide input after sending
-//     setWhatsAppNumber(''); // Clear the number
+//     setShowWhatsAppInput(false);
+//     setWhatsAppNumber('');
 //   };
 
 
@@ -282,7 +286,19 @@
           
 //           <div className="flex flex-shrink-0 flex-col border-t bg-white p-4 md:w-1/3 md:border-l md:border-t-0 md:p-6 md:shadow-lg md:overflow-y-auto">
 //             <div className="flex-grow space-y-4">
-//               <h2 className="border-b pb-2 text-xl font-bold text-gray-800">Order Summary</h2>
+              
+//               {/* ✅ UPDATED HEADER with the small button */}
+//               <div className="flex items-center justify-between border-b pb-2">
+//                   <h2 className="text-xl font-bold text-gray-800">Order Summary</h2>
+//                   <button
+//                       onClick={handleStartNewBill}
+//                       className="p-2 text-gray-500 rounded-full hover:bg-gray-200 hover:text-gray-700 transition-colors disabled:text-gray-300 disabled:cursor-not-allowed"
+//                       title="Start New Bill"
+//                       disabled={cart.length === 0}
+//                   >
+//                       <RefreshCw size={20} />
+//                   </button>
+//               </div>
               
 //               <div className="flex items-center justify-between"><span className="text-lg font-medium text-gray-600">Grand Total</span><span className="text-3xl font-bold text-indigo-600">₹{totalAmount.toFixed(2)}</span></div>
               
@@ -306,10 +322,8 @@
 //                   </button>
 //                 </div>
 
-//                 {/* ✅ UPDATED Finalize options */}
 //                 {showFinalizeOptions && cart.length > 0 && (
 //                   <div className="space-y-3 rounded-lg bg-gray-50 p-3 pt-2">
-//                     {/* New Input Field */}
 //                     {showWhatsAppInput ? (
 //                          <div className="flex gap-2">
 //                             <input 
@@ -410,8 +424,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import BarcodeScannerComponent from 'react-qr-barcode-scanner';
 import QRCode from 'react-qr-code';
-// ✅ I have added the "RefreshCw" icon for your new button
-import { Scan, Trash2, Send, CreditCard, CheckCircle, X, Printer, DollarSign, MessageSquare, RefreshCw } from 'lucide-react'; 
+import { Scan, Trash2, Send, CreditCard, CheckCircle, X, Printer, DollarSign, MessageSquare, RefreshCw, AlertTriangle } from 'lucide-react';
 
 // --- TYPE DEFINITIONS ---
 type CartItem = {
@@ -430,8 +443,67 @@ type InventoryProduct = {
   image?: string;
 };
 
+type PrintableReceiptProps = {
+  cart: CartItem[];
+  totalAmount: number;
+  shopName: string;
+};
+
+
+// --- MODAL COMPONENT ---
+type ModalProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+  onConfirm?: () => void;
+  confirmText?: string;
+  showCancel?: boolean;
+};
+
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, onConfirm, confirmText = "OK", showCancel = false }) => {
+  if (!isOpen) return null;
+
+  return (
+    // ✅ MODIFIED: Removed "bg-black bg-opacity-50" to make the background overlay completely transparent.
+    <div className="fixed inset-0 z-[100] flex items-center justify-center transition-opacity" aria-modal="true" role="dialog">
+      <div className="relative w-full max-w-md transform rounded-xl bg-white p-6 shadow-xl transition-all m-4 border border-gray-200">
+        <div className="flex items-start">
+          <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 sm:mx-0 sm:h-10 sm:w-10">
+            <AlertTriangle className="h-6 w-6 text-indigo-600" aria-hidden="true" />
+          </div>
+          <div className="ml-4 text-left">
+            <h3 className="text-xl font-semibold text-gray-800" id="modal-title">{title}</h3>
+            <div className="mt-2">
+              <div className="text-gray-600">{children}</div>
+            </div>
+          </div>
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
+          {showCancel && (
+             <button onClick={onClose} type="button" className="rounded-lg bg-gray-200 px-5 py-2 font-semibold text-gray-800 transition-colors hover:bg-gray-300">
+                Cancel
+             </button>
+          )}
+          <button 
+            type="button"
+            onClick={() => {
+              if (onConfirm) onConfirm();
+              onClose(); // Always close modal after action
+            }} 
+            className="rounded-lg bg-indigo-600 px-5 py-2 font-semibold text-white transition-colors hover:bg-indigo-700"
+          >
+            {confirmText}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 // Printable Receipt Component (No changes here)
-const PrintableReceipt = ({ cart, totalAmount, shopName }: { cart: CartItem[], totalAmount: number, shopName: string }) => (
+const PrintableReceipt: React.FC<PrintableReceiptProps> = ({ cart, totalAmount, shopName }) => (
     <div className="hidden print:block p-8 font-mono">
     <h1 className="text-2xl font-bold text-center mb-2">{shopName}</h1>
     <p className="text-center text-sm mb-6">Sale Invoice</p>
@@ -490,7 +562,15 @@ export default function BillingPage() {
   const suggestionsRef = useRef<HTMLDivElement | null>(null);
   const [showWhatsAppInput, setShowWhatsAppInput] = useState(false);
   const [whatsAppNumber, setWhatsAppNumber] = useState('');
-
+  
+  const [modal, setModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: undefined as (() => void) | undefined,
+    confirmText: 'OK',
+    showCancel: false,
+  });
 
   // --- DERIVED STATE & CONSTANTS ---
   const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -512,7 +592,8 @@ export default function BillingPage() {
       try {
         const res = await fetch('/api/products');
         if (!res.ok) throw new Error('Failed to fetch');
-        setInventory(await res.json());
+        const data: InventoryProduct[] = await res.json();
+        setInventory(data);
       } catch (err) {
         console.error('Error fetching inventory:', err);
       }
@@ -541,7 +622,9 @@ export default function BillingPage() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
   
-  // --- CORE FUNCTIONS (Only handleWhatsAppShare is changed) ---
+  // --- CORE FUNCTIONS (No changes here) ---
+  const closeModal = () => setModal({ ...modal, isOpen: false });
+
   const addToCart = (name: string, price: number, productId?: number) => {
     if (!name || price < 0) return;
     setCart((prevCart) => {
@@ -561,14 +644,21 @@ export default function BillingPage() {
 
   const handleManualAdd = () => {
     if (!productName.trim() || !productPrice || productPrice <= 0) {
-      alert('Please enter a valid product name and price.');
+      setModal({
+          isOpen: true,
+          title: 'Invalid Input',
+          message: 'Please enter a valid product name and a price greater than zero.',
+          showCancel: false,
+          confirmText: 'OK',
+          onConfirm: undefined,
+      });
       return;
     }
     const matchedItem = inventory.find(p => p.name.toLowerCase() === productName.trim().toLowerCase());
     if (matchedItem) {
       addToCart(matchedItem.name, matchedItem.sellingPrice, matchedItem.id);
     } else {
-      addToCart(productName.trim(), productPrice);
+      addToCart(productName.trim(), Number(productPrice));
     }
   };
 
@@ -581,33 +671,47 @@ export default function BillingPage() {
   
   const deleteCartItem = (id: number) => setCart(cart.filter((item) => item.id !== id));
 
-  // ✅ Your original function, now used for auto-reset after payment
   const handleTransactionDone = () => {
     setCart([]);
     setSelectedPayment('');
     setShowPaymentOptions(false);
     setShowFinalizeOptions(false);
   };
+  
+  const handlePaymentSuccess = () => {
+    setSelectedPayment('');
+    setShowPaymentOptions(false);
+  };
 
-  // ✅ NEW function for the manual reset button, which includes confirmation
   const handleStartNewBill = () => {
-    if (window.confirm('Are you sure you want to clear the current bill and start over?')) {
-        handleTransactionDone(); // Resets everything
-    }
+    setModal({
+        isOpen: true,
+        title: 'Confirm Action',
+        message: 'Are you sure you want to clear the current bill and start a new one?',
+        showCancel: true,
+        confirmText: 'Yes, Start New',
+        onConfirm: () => handleTransactionDone()
+    });
   };
 
   const handleWhatsAppShare = () => {
     if (!whatsAppNumber.trim() || !/^\d{10,15}$/.test(whatsAppNumber)) {
-        alert("Please enter a valid WhatsApp number (e.g., 919876543210).");
+        setModal({
+            isOpen: true,
+            title: 'Invalid Number',
+            message: 'Please enter a valid WhatsApp number including the country code (e.g., 919876543210).',
+            showCancel: false,
+            confirmText: 'Got it',
+            onConfirm: undefined
+        });
         return;
     }
-    const message = [...cart].reverse().map(p => `${p.name} (x${p.quantity}) - ₹${(p.price * p.quantity).toFixed(2)}`).join('\n');
+    const message = [...cart].reverse().map(p => `${p.name} (x${p.quantity}) - ₹${(p.price * item.quantity).toFixed(2)}`).join('\n');
     const fullMessage = `Hello! Here is your bill from ${merchantName}:\n\n${message}\n\n*Grand Total: ₹${totalAmount.toFixed(2)}*`;
     window.open(`https://wa.me/${whatsAppNumber}?text=${encodeURIComponent(fullMessage)}`, '_blank');
     setShowWhatsAppInput(false);
     setWhatsAppNumber('');
   };
-
 
   const handlePrint = () => window.print();
   
@@ -692,7 +796,6 @@ export default function BillingPage() {
           <div className="flex flex-shrink-0 flex-col border-t bg-white p-4 md:w-1/3 md:border-l md:border-t-0 md:p-6 md:shadow-lg md:overflow-y-auto">
             <div className="flex-grow space-y-4">
               
-              {/* ✅ UPDATED HEADER with the small button */}
               <div className="flex items-center justify-between border-b pb-2">
                   <h2 className="text-xl font-bold text-gray-800">Order Summary</h2>
                   <button
@@ -773,7 +876,7 @@ export default function BillingPage() {
                     <div className="space-y-3 rounded-lg bg-gray-50 p-4 text-center">
                         <h3 className="font-bold text-gray-800">Confirm Cash Payment</h3>
                         <p className="text-sm text-gray-600">Confirm receipt of ₹{totalAmount.toFixed(2)} cash.</p>
-                        <button onClick={handleTransactionDone} className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 p-3 font-bold text-white hover:bg-blue-700"><DollarSign size={20} /><span>Cash Received</span></button>
+                        <button onClick={handlePaymentSuccess} className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 p-3 font-bold text-white hover:bg-blue-700"><DollarSign size={20} /><span>Cash Received</span></button>
                     </div>
                   )}
 
@@ -786,7 +889,7 @@ export default function BillingPage() {
                             <QRCode size={256} style={{ height: "auto", maxWidth: "100%", width: "100%" }} value={upiQR} viewBox={`0 0 256 256`} />
                           </div>
                           <p className="text-sm text-gray-600">Pay to <b>{merchantUpi}</b></p>
-                          <button onClick={handleTransactionDone} className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 p-3 font-bold text-white hover:bg-green-700"><CheckCircle size={20} /><span>Payment Received</span></button>
+                          <button onClick={handlePaymentSuccess} className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 p-3 font-bold text-white hover:bg-green-700"><CheckCircle size={20} /><span>Payment Received</span></button>
                         </>
                       ) : (
                         <p className="p-2 font-semibold text-red-600">UPI ID not configured in Settings.</p>
@@ -798,7 +901,7 @@ export default function BillingPage() {
                     <div className="space-y-3 rounded-lg bg-gray-50 p-4 text-center">
                         <h3 className="font-bold text-gray-800">Confirm Card Payment</h3>
                         <p className="text-sm text-gray-600">Confirm transaction was successful on the card machine.</p>
-                        <button onClick={handleTransactionDone} className="flex w-full items-center justify-center gap-2 rounded-lg bg-purple-600 p-3 font-bold text-white hover:bg-purple-700"><CreditCard size={20} /><span>Payment Successful</span></button>
+                        <button onClick={handlePaymentSuccess} className="flex w-full items-center justify-center gap-2 rounded-lg bg-purple-600 p-3 font-bold text-white hover:bg-purple-700"><CreditCard size={20} /><span>Payment Successful</span></button>
                     </div>
                   )}
                 </div>
@@ -818,6 +921,17 @@ export default function BillingPage() {
       </div>
       
       <PrintableReceipt cart={cart} totalAmount={totalAmount} shopName={merchantName} />
+
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        title={modal.title}
+        onConfirm={modal.onConfirm}
+        confirmText={modal.confirmText}
+        showCancel={modal.showCancel}
+      >
+        <p>{modal.message}</p>
+      </Modal>
     </>
   );
 }
