@@ -1,45 +1,58 @@
 
 
+
 // src/app/api/products/[id]/route.ts
+import { NextResponse } from "next/server";
+import dbConnect from "@/lib/mongodb";
+import Product from "@/models/Product"; 
 
-import { PrismaClient } from '@prisma/client';
-import { NextResponse } from 'next/server';
-
-const prisma = new PrismaClient();
+// A helper function to transform the MongoDB document.
+const transformProduct = (product: any) => {
+  const transformed = {
+    // Use .toObject() or .lean() before this function is called
+    ...product,
+    id: product._id.toString(),
+  };
+  delete transformed._id;
+  delete transformed.__v;
+  return transformed;
+};
 
 // --- UPDATE a single product by its ID ---
 export async function PUT(
   request: Request,
-  { params }: { params: Promise<{ id: string }> } // <-- Type updated to Promise
+  { params }: { params: { id: string } }
 ) {
+  await dbConnect();
+  const { id } = params;
+
   try {
-    const { id } = await params; // <-- Await params to get the id
     const body = await request.json();
 
-    const { id: _, ...updateData } = body;
-
-    const existingProduct = await prisma.product.findUnique({
-      where: { id },
+    // Find and update the product
+    const updatedProduct = await Product.findByIdAndUpdate(id, body, {
+      new: true,
+      runValidators: true,
     });
 
-    if (!existingProduct) {
+    if (!updatedProduct) {
       return NextResponse.json(
         { message: `Product with ID ${id} not found.` },
         { status: 404 }
       );
     }
 
-    const updatedProduct = await prisma.product.update({
-      where: { id: id },
-      data: updateData,
-    });
+    // CORRECTED: After updating, fetch the entire updated list of products.
+    // This makes the PUT response consistent with the POST response.
+    const allProductsFromDb = await Product.find({}).sort({ createdAt: -1 }).lean();
+    const allProducts = allProductsFromDb.map(transformProduct);
+    
+    return NextResponse.json(allProducts);
 
-    return NextResponse.json(updatedProduct);
   } catch (error) {
     console.error("Failed to update product:", error);
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     return NextResponse.json(
-      { message: "Failed to update product", error: errorMessage },
+      { message: "Failed to update product", error: `${error}` },
       { status: 500 }
     );
   }
@@ -48,32 +61,26 @@ export async function PUT(
 // --- DELETE a single product by its ID ---
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> } // <-- Type updated to Promise
+  { params }: { params: { id: string } }
 ) {
+  await dbConnect();
+  const { id } = params;
+
   try {
-    const { id } = await params; // <-- Await params to get the id
-
-    const existingProduct = await prisma.product.findUnique({
-      where: { id },
-    });
-
-    if (!existingProduct) {
+    const deletedProduct = await Product.findByIdAndDelete(id);
+    if (!deletedProduct) {
       return NextResponse.json(
         { message: `Product with ID ${id} not found.` },
         { status: 404 }
       );
     }
-
-    await prisma.product.delete({
-      where: { id },
-    });
-
+    
+    // Return a success response with no body, which is standard for DELETE
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.error("Failed to delete product:", error);
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     return NextResponse.json(
-      { message: "Failed to delete product", error: errorMessage },
+      { message: "Failed to delete product", error: `${error}` },
       { status: 500 }
     );
   }

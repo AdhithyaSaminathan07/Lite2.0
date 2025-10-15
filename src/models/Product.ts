@@ -42,7 +42,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 export interface IProduct extends Document {
   name: string;
   quantity: number;
-  buyingPrice?: number; // Optional, can be useful for profit calculation
+  buyingPrice?: number;
   sellingPrice: number;
   gstRate: number;
   image?: string;
@@ -83,7 +83,6 @@ const ProductSchema: Schema<IProduct> = new Schema({
     type: String,
     trim: true,
     unique: true,
-    // Use a sparse index for unique SKUs that can also be null/undefined
     sparse: true, 
   },
   description: {
@@ -95,7 +94,7 @@ const ProductSchema: Schema<IProduct> = new Schema({
   timestamps: true, 
 });
 
-// This prevents Mongoose from redefining the model every time in development (HMR)
-const Product: Model<IProduct> = mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema);
+// THIS IS THE MOST IMPORTANT LINE. IT FORCES MONGOOSE TO USE THE 'Product' COLLECTION.
+const Product: Model<IProduct> = mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema, 'Product');
 
 export default Product;
