@@ -1,4 +1,4 @@
-// src/app/billing/page.tsx
+// src/app/(lite)/billing/page.tsx
 
 import Billing from '@/components/Billing'; // <-- IMPORT a a a a a
 

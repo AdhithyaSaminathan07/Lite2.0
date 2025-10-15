@@ -4,29 +4,24 @@
 // import { useSession } from 'next-auth/react';
 // import BarcodeScannerComponent from 'react-qr-barcode-scanner';
 // import QRCode from 'react-qr-code';
-// import { Scan, Trash2, Send, CreditCard, CheckCircle, X, Printer, DollarSign, MessageSquare, RefreshCw, AlertTriangle } from 'lucide-react';
+// import { Scan, Trash2, Send, CreditCard, CheckCircle, X, DollarSign, MessageSquare, RefreshCw, AlertTriangle } from 'lucide-react';
 
 // // --- TYPE DEFINITIONS ---
+// // MODIFICATION: Changed `productId` and `id` to `string` to match MongoDB's `_id` format.
 // type CartItem = {
-//   id: number;
-//   productId?: number;
+//   id: number; // Unique key for React rendering, can stay as a number
+//   productId?: string; // The database ID of the product
 //   name: string;
 //   quantity: number;
 //   price: number;
 // };
 
 // type InventoryProduct = {
-//   id: number;
+//   id: string; // The database ID
 //   name: string;
 //   quantity: number;
 //   sellingPrice: number;
 //   image?: string;
-// };
-
-// type PrintableReceiptProps = {
-//   cart: CartItem[];
-//   totalAmount: number;
-//   shopName: string;
 // };
 
 // // Type definition for the barcode scanner result object
@@ -84,48 +79,6 @@
 //     </div>
 //   );
 // };
-
-
-// // Printable Receipt Component
-// const PrintableReceipt: React.FC<PrintableReceiptProps> = ({ cart, totalAmount, shopName }) => (
-//     <div className="hidden print:block p-8 font-mono">
-//     <h1 className="text-2xl font-bold text-center mb-2">{shopName}</h1>
-//     <p className="text-center text-sm mb-6">Sale Invoice</p>
-//     <div className="flex justify-between text-xs mb-4">
-//       <span>Date: {new Date().toLocaleDateString()}</span>
-//       <span>Time: {new Date().toLocaleTimeString()}</span>
-//     </div>
-//     <table className="w-full text-sm">
-//       <thead>
-//         <tr className="border-t border-b border-black">
-//           <th className="text-left py-2">ITEM</th>
-//           <th className="text-center py-2">QTY</th>
-//           <th className="text-right py-2">PRICE</th>
-//           <th className="text-right py-2">TOTAL</th>
-//         </tr>
-//       </thead>
-//       <tbody>
-//         {[...cart].reverse().map((item: CartItem) => (
-//           <tr key={item.id} className="border-b">
-//             <td className="py-2">{item.name}</td>
-//             <td className="text-center py-2">{item.quantity}</td>
-//             <td className="text-right py-2">₹{item.price.toFixed(2)}</td>
-//             <td className="text-right py-2">₹{(item.price * item.quantity).toFixed(2)}</td>
-//           </tr>
-//         ))}
-//       </tbody>
-//     </table>
-//     <div className="mt-6 flex justify-end">
-//       <div className="w-2/5">
-//         <div className="flex justify-between font-bold text-lg">
-//           <span>Grand Total:</span>
-//           <span>₹{totalAmount.toFixed(2)}</span>
-//         </div>
-//       </div>
-//     </div>
-//     <p className="text-center text-xs mt-10">--- Thank You! ---</p>
-//   </div>
-// );
 
 
 // // --- MAIN COMPONENT ---
@@ -209,7 +162,8 @@
 //   // --- CORE FUNCTIONS ---
 //   const closeModal = () => setModal({ ...modal, isOpen: false });
 
-//   const addToCart = (name: string, price: number, productId?: number) => {
+//   // MODIFICATION: Ensure productId is handled as a string
+//   const addToCart = (name: string, price: number, productId?: string) => {
 //     if (!name || price < 0) return;
 //     setCart((prevCart: CartItem[]) => {
 //       const existingItem = productId ? prevCart.find((item: CartItem) => item.productId === productId) : null;
@@ -261,10 +215,57 @@
 //     setShowPaymentOptions(false);
 //     setShowFinalizeOptions(false);
 //   };
+  
+//   // NEW: Function to send inventory update requests to the API
+//   const updateInventory = async () => {
+//     // Filter for items that actually came from the inventory (have a productId)
+//     const itemsToUpdate = cart.filter(item => item.productId);
 
-//   const handlePaymentSuccess = () => {
-//     setSelectedPayment('');
-//     setShowPaymentOptions(false);
+//     // Create an array of fetch promises
+//     const updatePromises = itemsToUpdate.map(item => {
+//       return fetch(`/api/products/${item.productId}`, {
+//         method: 'PUT',
+//         headers: {
+//           'Content-Type': 'application/json',
+//         },
+//         body: JSON.stringify({
+//           quantityToDecrement: item.quantity,
+//         }),
+//       });
+//     });
+
+//     try {
+//       // Execute all update requests in parallel for efficiency
+//       const responses = await Promise.all(updatePromises);
+      
+//       // Optionally check for any failed requests
+//       responses.forEach(async (res, index) => {
+//         if (!res.ok) {
+//           const failedItem = itemsToUpdate[index];
+//           console.error(`Failed to update inventory for: ${failedItem.name}. Status: ${res.status}`);
+//           // You could display an error message to the user here
+//         }
+//       });
+//     } catch (error) {
+//       console.error("A critical network error occurred during inventory update:", error);
+//     }
+//   };
+
+//   // MODIFIED: This function now orchestrates the inventory update and UI reset.
+//   const handlePaymentSuccess = async () => {
+//     // Step 1: Tell the backend to reduce the inventory. Await ensures this completes first.
+//     await updateInventory();
+
+//     // Step 2: Show a success modal to the user.
+//     setModal({
+//       isOpen: true,
+//       title: 'Transaction Complete!',
+//       message: 'The bill has been finalized and inventory has been updated.',
+//       showCancel: false,
+//       confirmText: 'Start New Bill',
+//       // The onConfirm action now resets the UI for the next transaction.
+//       onConfirm: handleTransactionDone, 
+//     });
 //   };
 
 //   const handleStartNewBill = () => {
@@ -297,10 +298,6 @@
 //     setWhatsAppNumber('');
 //   };
 
-//   const handlePrint = () => window.print();
-
-//   // ✅ FIX: The function signature is changed to match the library's expected types.
-//   // The 'error' parameter is now correctly typed as 'unknown'.
 //   const handleScannerUpdate = (error: unknown, result: ScannerResult | undefined) => {
 //     if (result?.getText()) {
 //       const scannedValue = result.getText();
@@ -313,7 +310,6 @@
 //       setScanning(false);
 //     }
     
-//     // ✅ FIX: A type guard is added to safely handle and log the error.
 //     if (error) {
 //       if (error instanceof Error) {
 //         console.info('Scanner error:', error.message);
@@ -326,7 +322,7 @@
 //   // --- RENDER ---
 //   return (
 //     <>
-//       <div className="flex h-screen w-full bg-gray-100 font-sans print:hidden">
+//       <div className="flex h-screen w-full bg-gray-100 font-sans">
 //         <div className="flex h-full w-full flex-col md:flex-row overflow-hidden">
 //           <div className="flex flex-col p-4 md:w-2/3 md:p-6 flex-1 overflow-y-auto">
 //             <header className="flex flex-shrink-0 items-center justify-between mb-4">
@@ -416,10 +412,6 @@
 //                             <span>Share on WhatsApp</span>
 //                         </button>
 //                     )}
-//                     <button onClick={handlePrint} className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-500 py-2 px-3 font-semibold text-white transition-all hover:bg-slate-600" >
-//                       <Printer size={16} />
-//                       <span>Print Receipt</span>
-//                     </button>
 //                   </div>
 //                 )}
 //               </div>
@@ -474,7 +466,6 @@
 //           </div>
 //         )}
 //       </div>
-//       <PrintableReceipt cart={cart} totalAmount={totalAmount} shopName={merchantName} />
 //       <Modal isOpen={modal.isOpen} onClose={closeModal} title={modal.title} onConfirm={modal.onConfirm} confirmText={modal.confirmText} showCancel={modal.showCancel} >
 //         <p>{modal.message}</p>
 //       </Modal>
@@ -482,6 +473,8 @@
 //   );
 // }
 
+
+// Example path: src/app/(lite)/billing/page.tsx
 
 'use client';
 
@@ -494,21 +487,20 @@ import { Scan, Trash2, Send, CreditCard, CheckCircle, X, DollarSign, MessageSqua
 // --- TYPE DEFINITIONS ---
 type CartItem = {
   id: number;
-  productId?: number;
+  productId?: string;
   name: string;
   quantity: number;
   price: number;
 };
 
 type InventoryProduct = {
-  id: number;
+  id: string;
   name: string;
   quantity: number;
   sellingPrice: number;
   image?: string;
 };
 
-// Type definition for the barcode scanner result object
 type ScannerResult = {
   getText: () => string;
 };
@@ -646,7 +638,7 @@ export default function BillingPage() {
   // --- CORE FUNCTIONS ---
   const closeModal = () => setModal({ ...modal, isOpen: false });
 
-  const addToCart = (name: string, price: number, productId?: number) => {
+  const addToCart = (name: string, price: number, productId?: string) => {
     if (!name || price < 0) return;
     setCart((prevCart: CartItem[]) => {
       const existingItem = productId ? prevCart.find((item: CartItem) => item.productId === productId) : null;
@@ -699,10 +691,68 @@ export default function BillingPage() {
     setShowFinalizeOptions(false);
   };
 
-  const handlePaymentSuccess = () => {
-    setSelectedPayment('');
-    setShowPaymentOptions(false);
+  const updateInventory = async () => {
+    const itemsToUpdate = cart.filter(item => item.productId);
+    const updatePromises = itemsToUpdate.map(item => {
+      return fetch(`/api/products/${item.productId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantityToDecrement: item.quantity }),
+      });
+    });
+
+    try {
+      const responses = await Promise.all(updatePromises);
+      responses.forEach(async (res, index) => {
+        if (!res.ok) {
+          const failedItem = itemsToUpdate[index];
+          console.error(`Failed to update inventory for: ${failedItem.name}. Status: ${res.status}`);
+        }
+      });
+    } catch (error) {
+      console.error("A critical network error occurred during inventory update:", error);
+    }
   };
+
+  // --- MODIFICATION START ---
+  // This function now saves the sale, then updates inventory and shows the success modal.
+  const handlePaymentSuccess = async () => {
+    // Step 1: Save the completed sale to the database.
+    try {
+      // 'Card' payments are recorded as 'cash' for simplicity, 'QR Code' is 'qr'.
+      const paymentMethodForDB = selectedPayment === 'QR Code' ? 'qr' : 'cash';
+
+      const response = await fetch('/api/sales', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: totalAmount,
+          paymentMethod: paymentMethodForDB,
+        }),
+      });
+
+      if (!response.ok) {
+        // Log an error if the sale couldn't be saved, but continue the process for the user.
+        console.error("CRITICAL: Failed to save the sale to the database.");
+      }
+    } catch (error) {
+      console.error("An error occurred while attempting to save the sale:", error);
+    }
+
+    // Step 2: Update the inventory for the items sold.
+    await updateInventory();
+
+    // Step 3: Show a success modal and prepare for the next transaction.
+    setModal({
+      isOpen: true,
+      title: 'Transaction Complete!',
+      message: 'The bill has been finalized and inventory has been updated.',
+      showCancel: false,
+      confirmText: 'Start New Bill',
+      onConfirm: handleTransactionDone,
+    });
+  };
+  // --- MODIFICATION END ---
 
   const handleStartNewBill = () => {
     setModal({
@@ -745,19 +795,16 @@ export default function BillingPage() {
       }
       setScanning(false);
     }
-    
     if (error) {
-      if (error instanceof Error) {
-        console.info('Scanner error:', error.message);
-      } else {
-        console.error('An unknown scanner error occurred:', error);
-      }
+      console.info('Scanner error:', (error as Error).message);
     }
   };
 
   // --- RENDER ---
   return (
     <>
+      {/* The entire JSX for your component remains the same. */}
+      {/* It correctly calls `handlePaymentSuccess` on button clicks. */}
       <div className="flex h-screen w-full bg-gray-100 font-sans">
         <div className="flex h-full w-full flex-col md:flex-row overflow-hidden">
           <div className="flex flex-col p-4 md:w-2/3 md:p-6 flex-1 overflow-y-auto">
