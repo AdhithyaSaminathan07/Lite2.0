@@ -1,8 +1,11 @@
 // "use client";
 
 // import { useState, useEffect } from "react";
+// import { Package, AlertTriangle, XCircle, Loader2 } from "lucide-react";
 
-// // Define a type for the sales data for better type-safety
+// // --- TYPE DEFINITIONS ---
+
+// // For Sales Data
 // type SalesData = {
 //   total: number;
 //   cash: number;
@@ -11,89 +14,203 @@
 //   lastUpdated: string;
 // };
 
+// // For Product Data (to calculate summary)
+// interface Product {
+//   id: string;
+//   name: string;
+//   quantity: number;
+//   lowStockThreshold?: number;
+// }
+
+// // For the calculated Inventory Summary
+// type InventorySummary = {
+//   inStock: number;
+//   lowStock: number;
+//   outOfStock: number;
+// };
+
+// // Possible time periods for the sales tabs
+// type Period = "Today" | "Weekly" | "Monthly";
+
+// // --- CONSTANTS ---
+// const LOW_STOCK_THRESHOLD = 10; // Global fallback
+
+
+// // --- COMPONENT ---
+
 // export default function DashboardComponent() {
-//   // Initialize state with the defined type
+//   // State for Sales Data
 //   const [salesData, setSalesData] = useState<SalesData>({
-//     total: 0,
-//     cash: 0,
-//     qr: 0,
-//     bills: 0,
-//     lastUpdated: "",
+//     total: 0, cash: 0, qr: 0, bills: 0, lastUpdated: "",
 //   });
+//   const [activePeriod, setActivePeriod] = useState<Period>("Today");
+//   const [isSalesLoading, setIsSalesLoading] = useState(true);
 
-//   // This useEffect hook handles data fetching and automatic refreshing.
+//   // State for Inventory Summary
+//   const [inventorySummary, setInventorySummary] = useState<InventorySummary>({
+//     inStock: 0, lowStock: 0, outOfStock: 0,
+//   });
+//   const [isSummaryLoading, setIsSummaryLoading] = useState(true);
+
+
+//   // Effect to fetch sales data based on the active period
 //   useEffect(() => {
-//     // This async function fetches the latest sales data from your API endpoint.
 //     const fetchSales = async () => {
+//       setIsSalesLoading(true);
 //       try {
-//         // Replace '/api/sales' with your actual API endpoint if it's different.
-//         const res = await fetch("/api/sales");
-
-//         if (!res.ok) {
-//           // If the server response is not OK, throw an error to be caught below.
-//           throw new Error(`Failed to fetch: ${res.status}`);
-//         }
+//         const res = await fetch(`/api/sales?period=${activePeriod.toLowerCase()}`);
+//         if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
 //         const data: SalesData = await res.json();
-//         setSalesData(data); // Update the component's state with the new data.
+//         setSalesData(data);
 //       } catch (err) {
-//         // Log any errors to the console for debugging.
 //         console.error("Failed to load sales data:", err);
+//       } finally {
+//         setIsSalesLoading(false);
 //       }
 //     };
 
-//     // 1. Initial Fetch: Call fetchSales immediately when the component first loads.
 //     fetchSales();
-
-//     // 2. Auto-Refresh: Set up an interval to call fetchSales again every 15 seconds.
-//     const interval = setInterval(fetchSales, 15000); // 15000 milliseconds = 15 seconds
-
-//     // 3. Cleanup Function: This function runs when the component is unmounted
-//     // (e.g., user navigates to another page). It stops the interval to prevent
-//     // memory leaks and unnecessary API calls.
+//     const interval = setInterval(fetchSales, 15000); // Auto-refresh sales
 //     return () => clearInterval(interval);
-//   }, []); // The empty dependency array [] ensures this effect runs only once on mount.
+//   }, [activePeriod]);
 
-//   // --- JSX for Rendering the Component ---
+
+//   // Effect to fetch product data for the inventory summary, with live updates
+//   useEffect(() => {
+//     // Set loading to true only once initially, to avoid flickering on subsequent re-fetches.
+//     setIsSummaryLoading(true);
+    
+//     const fetchInventorySummary = async () => {
+//         try {
+//             const res = await fetch('/api/products');
+//             if (!res.ok) throw new Error('Failed to fetch product data');
+            
+//             const products: Product[] = await res.json();
+
+//             // Calculate summary counts
+//             const summary: InventorySummary = products.reduce((acc, product) => {
+//                 const threshold = product.lowStockThreshold ?? LOW_STOCK_THRESHOLD;
+//                 if (product.quantity === 0) {
+//                     acc.outOfStock++;
+//                 } else if (product.quantity <= threshold) {
+//                     acc.lowStock++;
+//                 } else {
+//                     acc.inStock++;
+//                 }
+//                 return acc;
+//             }, { inStock: 0, lowStock: 0, outOfStock: 0 });
+
+//             setInventorySummary(summary);
+//         } catch (err) {
+//             console.error("Failed to load inventory summary:", err);
+//         } finally {
+//             // Ensure loading is set to false after the first fetch
+//             if (isSummaryLoading) {
+//               setIsSummaryLoading(false);
+//             }
+//         }
+//     };
+
+//     fetchInventorySummary(); // Initial fetch
+    
+//     // Set up the interval for live updates
+//     const interval = setInterval(fetchInventorySummary, 15000); // Refresh every 15 seconds
+
+//     // Cleanup function to clear the interval when the component unmounts
+//     return () => clearInterval(interval);
+//   }, []); // The empty dependency array ensures this effect runs only once to set up the interval.
+
+
+//   const TABS: Period[] = ["Today", "Weekly", "Monthly"];
+
 //   return (
-//     // Main container: sets a light gray background and uses flexbox to center the card.
-//     // Responsive padding is added: p-4 on small screens, sm:p-8 on larger screens.
-//     // pt-12 and sm:pt-20 add more padding at the top to position the card nicely.
-//     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-start p-4 sm:p-8 pt-12 sm:pt-20">
-//       {/* Sales Card: white background, rounded corners, and a subtle shadow.
-//           w-full ensures it takes the full width on mobile.
-//           max-w-sm constrains its width on larger screens for better readability.
-//           p-6 provides consistent internal padding. */}
+//     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-start p-4 sm:p-8 pt-12 sm:pt-20 space-y-6">
+      
+//       {/* Sales Card */}
 //       <div className="w-full max-w-sm bg-white rounded-2xl shadow-lg p-6">
-//         {/* Card Header */}
 //         <h3 className="text-lg font-bold text-gray-800 mb-4">
-//           Today’s Sales
+//           {activePeriod === 'Today' ? 'Today’s' : `This ${activePeriod.slice(0, -2)}'s`} Sales
 //         </h3>
-
-//         {/* Sales Details Section: space-y-3 adds vertical space between each item. */}
-//         <div className="space-y-3">
-//           <div className="flex justify-between items-center">
-//             <p className="text-gray-600 text-sm">Total Sales</p>
-//             <p className="font-bold text-gray-900">₹{salesData.total}</p>
-//           </div>
-
-//           <div className="flex justify-between items-center">
-//             <p className="text-gray-600 text-sm">Cash</p>
-//             <p className="font-semibold text-green-600">₹{salesData.cash}</p>
-//           </div>
-
-//           <div className="flex justify-between items-center">
-//             <p className="text-gray-600 text-sm">QR / Online</p>
-//             <p className="font-semibold text-blue-600">₹{salesData.qr}</p>
-//           </div>
+//         <div className="flex border-b border-gray-200 mb-4">
+//           {TABS.map((tab) => (
+//             <button
+//               key={tab}
+//               onClick={() => setActivePeriod(tab)}
+//               className={`py-2 px-4 text-sm font-medium focus:outline-none ${
+//                 activePeriod === tab
+//                   ? "border-b-2 border-blue-600 text-blue-600"
+//                   : "text-gray-500 hover:text-gray-700"
+//               }`}
+//             >
+//               {tab}
+//             </button>
+//           ))}
 //         </div>
 
-//         {/* Card Footer: A border-t adds a separator line.
-//             mt-5 adds margin above the line, and pt-4 adds padding below it. */}
-//         <div className="mt-5 flex justify-between border-t pt-4 text-sm text-gray-500">
-//           <span>Bills: {salesData.bills}</span>
-//           <span>{salesData.lastUpdated}</span>
-//         </div>
+//         {isSalesLoading ? (
+//           <div className="text-center py-10 flex items-center justify-center text-gray-500">
+//             <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading Sales...
+//           </div>
+//         ) : (
+//           <div>
+//             <div className="space-y-3">
+//               <div className="flex justify-between items-center">
+//                 <p className="text-gray-600 text-sm">Total Sales</p>
+//                 <p className="font-bold text-gray-900">₹{salesData.total}</p>
+//               </div>
+//               <div className="flex justify-between items-center">
+//                 <p className="text-gray-600 text-sm">Cash</p>
+//                 <p className="font-semibold text-green-600">₹{salesData.cash}</p>
+//               </div>
+//               <div className="flex justify-between items-center">
+//                 <p className="text-gray-600 text-sm">QR / Online</p>
+//                 <p className="font-semibold text-blue-600">₹{salesData.qr}</p>
+//               </div>
+//             </div>
+//             <div className="mt-5 flex justify-between border-t pt-4 text-sm text-gray-500">
+//               <span>Bills: {salesData.bills}</span>
+//               <span>{salesData.lastUpdated}</span>
+//             </div>
+//           </div>
+//         )}
 //       </div>
+
+//       {/* Inventory Summary Card */}
+//       <div className="w-full max-w-sm bg-white rounded-2xl shadow-lg p-6">
+//         <h3 className="text-lg font-bold text-gray-800 mb-4">
+//           Inventory Summary
+//         </h3>
+//         {isSummaryLoading ? (
+//            <div className="text-center py-10 flex items-center justify-center text-gray-500">
+//              <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading Summary...
+//            </div>
+//         ) : (
+//         <div className="space-y-4">
+//             <div className="flex items-center justify-between text-green-700 bg-green-50 p-3 rounded-lg">
+//                 <div className="flex items-center gap-3">
+//                     <Package className="w-5 h-5" />
+//                     <span className="font-medium text-sm">In Stock</span>
+//                 </div>
+//                 <span className="font-bold text-base">{inventorySummary.inStock}</span>
+//             </div>
+//             <div className="flex items-center justify-between text-orange-700 bg-orange-50 p-3 rounded-lg">
+//                 <div className="flex items-center gap-3">
+//                     <AlertTriangle className="w-5 h-5" />
+//                     <span className="font-medium text-sm">Low Stock</span>
+//                 </div>
+//                 <span className="font-bold text-base">{inventorySummary.lowStock}</span>
+//             </div>
+//             <div className="flex items-center justify-between text-red-700 bg-red-50 p-3 rounded-lg">
+//                 <div className="flex items-center gap-3">
+//                     <XCircle className="w-5 h-5" />
+//                     <span className="font-medium text-sm">Out of Stock</span>
+//                 </div>
+//                 <span className="font-bold text-base">{inventorySummary.outOfStock}</span>
+//             </div>
+//         </div>
+//         )}
+//       </div>
+
 //     </div>
 //   );
 // }
@@ -101,8 +218,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Package, AlertTriangle, XCircle, Loader2 } from "lucide-react";
 
-// Define types for better type-safety
+// --- TYPE DEFINITIONS ---
+
+// For Sales Data
 type SalesData = {
   total: number;
   cash: number;
@@ -111,58 +231,119 @@ type SalesData = {
   lastUpdated: string;
 };
 
-// Define the possible time periods for the tabs
+// For Product Data (to calculate summary)
+interface Product {
+  id: string;
+  name: string;
+  quantity: number;
+  lowStockThreshold?: number;
+}
+
+// For the calculated Inventory Summary
+type InventorySummary = {
+  inStock: number;
+  lowStock: number;
+  outOfStock: number;
+};
+
+// Possible time periods for the sales tabs
 type Period = "Today" | "Weekly" | "Monthly";
 
+// --- CONSTANTS ---
+const LOW_STOCK_THRESHOLD = 10; // Global fallback
+
+
+// --- COMPONENT ---
+
 export default function DashboardComponent() {
+  // State for Sales Data
   const [salesData, setSalesData] = useState<SalesData>({
-    total: 0,
-    cash: 0,
-    qr: 0,
-    bills: 0,
-    lastUpdated: "",
+    total: 0, cash: 0, qr: 0, bills: 0, lastUpdated: "",
   });
-
-  // State to manage the currently active tab
   const [activePeriod, setActivePeriod] = useState<Period>("Today");
-  const [isLoading, setIsLoading] = useState(true);
+  const [isSalesLoading, setIsSalesLoading] = useState(true);
 
-  // useEffect now fetches data based on the activePeriod and auto-refreshes.
+  // State for Inventory Summary
+  const [inventorySummary, setInventorySummary] = useState<InventorySummary>({
+    inStock: 0, lowStock: 0, outOfStock: 0,
+  });
+  const [isSummaryLoading, setIsSummaryLoading] = useState(true);
+
+
+  // Effect to fetch sales data based on the active period
   useEffect(() => {
     const fetchSales = async () => {
-      setIsLoading(true);
+      setIsSalesLoading(true);
       try {
         const res = await fetch(`/api/sales?period=${activePeriod.toLowerCase()}`);
-
-        if (!res.ok) {
-          throw new Error(`Failed to fetch: ${res.status}`);
-        }
+        if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
         const data: SalesData = await res.json();
         setSalesData(data);
       } catch (err) {
         console.error("Failed to load sales data:", err);
       } finally {
-        setIsLoading(false);
+        setIsSalesLoading(false);
       }
     };
 
     fetchSales();
-    const interval = setInterval(fetchSales, 15000);
+    const interval = setInterval(fetchSales, 15000); // Auto-refresh sales
     return () => clearInterval(interval);
   }, [activePeriod]);
+
+
+  // Effect to fetch product data for the inventory summary, with live updates
+  useEffect(() => {
+    setIsSummaryLoading(true);
+    
+    const fetchInventorySummary = async () => {
+        try {
+            const res = await fetch('/api/products');
+            if (!res.ok) throw new Error('Failed to fetch product data');
+            
+            const products: Product[] = await res.json();
+
+            const summary: InventorySummary = products.reduce((acc, product) => {
+                const threshold = product.lowStockThreshold ?? LOW_STOCK_THRESHOLD;
+                if (product.quantity === 0) {
+                    acc.outOfStock++;
+                } else if (product.quantity <= threshold) {
+                    acc.lowStock++;
+                } else {
+                    acc.inStock++;
+                }
+                return acc;
+            }, { inStock: 0, lowStock: 0, outOfStock: 0 });
+
+            setInventorySummary(summary);
+        } catch (err) {
+            console.error("Failed to load inventory summary:", err);
+        } finally {
+            if (isSummaryLoading) {
+              setIsSummaryLoading(false);
+            }
+        }
+    };
+
+    fetchInventorySummary();
+    const interval = setInterval(fetchInventorySummary, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
 
   const TABS: Period[] = ["Today", "Weekly", "Monthly"];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-start p-4 sm:p-8 pt-12 sm:pt-20">
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-lg p-6">
-        {/* --- THIS IS THE DYNAMIC TITLE --- */}
+    // RESPONSIVE CONTAINER:
+    // - Stacks vertically on mobile (flex-col)
+    // - Becomes a row on large screens (lg:flex-row) with a gap (lg:space-x-8)
+    <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row items-center lg:items-start lg:justify-center p-4 sm:p-6 pt-12 lg:pt-20 space-y-6 lg:space-y-0 lg:space-x-8">
+      
+      {/* Sales Card - Added responsive width */}
+      <div className="w-full max-w-sm lg:w-96 lg:max-w-md bg-white rounded-2xl shadow-lg p-6 flex-shrink-0">
         <h3 className="text-lg font-bold text-gray-800 mb-4">
-          {activePeriod === 'Today' ? 'Today’s' : `This ${activePeriod}'s`} Sales
+          {activePeriod === 'Today' ? 'Today’s' : `This ${activePeriod.slice(0, -2)}'s`} Sales
         </h3>
-        {/* --- END OF CHANGE --- */}
-
-        {/* Tab Buttons */}
         <div className="flex border-b border-gray-200 mb-4">
           {TABS.map((tab) => (
             <button
@@ -179,36 +360,70 @@ export default function DashboardComponent() {
           ))}
         </div>
 
-        {/* Sales Details Section */}
-        {isLoading ? (
-          <div className="text-center py-10">Loading...</div>
+        {isSalesLoading ? (
+          <div className="text-center py-10 flex items-center justify-center text-gray-500 h-36">
+            <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading Sales...
+          </div>
         ) : (
-          <div>
+          <div className="h-36 flex flex-col justify-between">
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <p className="text-gray-600 text-sm">Total Sales</p>
                 <p className="font-bold text-gray-900">₹{salesData.total}</p>
               </div>
-
               <div className="flex justify-between items-center">
                 <p className="text-gray-600 text-sm">Cash</p>
                 <p className="font-semibold text-green-600">₹{salesData.cash}</p>
               </div>
-
               <div className="flex justify-between items-center">
                 <p className="text-gray-600 text-sm">QR / Online</p>
                 <p className="font-semibold text-blue-600">₹{salesData.qr}</p>
               </div>
             </div>
-
-            {/* Card Footer */}
-            <div className="mt-5 flex justify-between border-t pt-4 text-sm text-gray-500">
+            <div className="flex justify-between border-t pt-4 text-sm text-gray-500">
               <span>Bills: {salesData.bills}</span>
               <span>{salesData.lastUpdated}</span>
             </div>
           </div>
         )}
       </div>
+
+      {/* Inventory Summary Card - Added responsive width */}
+      <div className="w-full max-w-sm lg:w-96 lg:max-w-md bg-white rounded-2xl shadow-lg p-6 flex-shrink-0">
+        <h3 className="text-lg font-bold text-gray-800 mb-4">
+          Inventory Summary
+        </h3>
+        {isSummaryLoading ? (
+           <div className="text-center py-10 flex items-center justify-center text-gray-500 h-44">
+             <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading Summary...
+           </div>
+        ) : (
+        <div className="space-y-4 h-44">
+            <div className="flex items-center justify-between text-green-700 bg-green-50 p-3 rounded-lg">
+                <div className="flex items-center gap-3">
+                    <Package className="w-5 h-5" />
+                    <span className="font-medium text-sm">In Stock</span>
+                </div>
+                <span className="font-bold text-base">{inventorySummary.inStock}</span>
+            </div>
+            <div className="flex items-center justify-between text-orange-700 bg-orange-50 p-3 rounded-lg">
+                <div className="flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5" />
+                    <span className="font-medium text-sm">Low Stock</span>
+                </div>
+                <span className="font-bold text-base">{inventorySummary.lowStock}</span>
+            </div>
+            <div className="flex items-center justify-between text-red-700 bg-red-50 p-3 rounded-lg">
+                <div className="flex items-center gap-3">
+                    <XCircle className="w-5 h-5" />
+                    <span className="font-medium text-sm">Out of Stock</span>
+                </div>
+                <span className="font-bold text-base">{inventorySummary.outOfStock}</span>
+            </div>
+        </div>
+        )}
+      </div>
+
     </div>
   );
 }
