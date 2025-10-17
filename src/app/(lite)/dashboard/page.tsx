@@ -9,9 +9,10 @@
 
 
 // src/app/(lite)/dashboard/page.tsx
+// src/app/(lite)/dashboard/page.tsx
 
 import React from 'react';
-import Dashboard from '@/src/components/Dashboard';
+import Dashboard from '@/components/Dashboard'; // Corrected import path
 
 export default function DashboardPage() {
   return <Dashboard />;
