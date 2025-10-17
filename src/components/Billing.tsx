@@ -1,3 +1,5 @@
+// // src/app/(lite)/billing/page.tsx
+
 // 'use client';
 
 // import React, { useState, useEffect, useRef } from 'react';
@@ -7,24 +9,22 @@
 // import { Scan, Trash2, Send, CreditCard, CheckCircle, X, DollarSign, MessageSquare, RefreshCw, AlertTriangle } from 'lucide-react';
 
 // // --- TYPE DEFINITIONS ---
-// // MODIFICATION: Changed `productId` and `id` to `string` to match MongoDB's `_id` format.
 // type CartItem = {
-//   id: number; // Unique key for React rendering, can stay as a number
-//   productId?: string; // The database ID of the product
+//   id: number;
+//   productId?: string;
 //   name: string;
 //   quantity: number;
 //   price: number;
 // };
 
 // type InventoryProduct = {
-//   id: string; // The database ID
+//   id: string;
 //   name: string;
 //   quantity: number;
 //   sellingPrice: number;
 //   image?: string;
 // };
 
-// // Type definition for the barcode scanner result object
 // type ScannerResult = {
 //   getText: () => string;
 // };
@@ -162,7 +162,6 @@
 //   // --- CORE FUNCTIONS ---
 //   const closeModal = () => setModal({ ...modal, isOpen: false });
 
-//   // MODIFICATION: Ensure productId is handled as a string
 //   const addToCart = (name: string, price: number, productId?: string) => {
 //     if (!name || price < 0) return;
 //     setCart((prevCart: CartItem[]) => {
@@ -215,35 +214,23 @@
 //     setShowPaymentOptions(false);
 //     setShowFinalizeOptions(false);
 //   };
-  
-//   // NEW: Function to send inventory update requests to the API
-//   const updateInventory = async () => {
-//     // Filter for items that actually came from the inventory (have a productId)
-//     const itemsToUpdate = cart.filter(item => item.productId);
 
-//     // Create an array of fetch promises
+//   const updateInventory = async () => {
+//     const itemsToUpdate = cart.filter(item => item.productId);
 //     const updatePromises = itemsToUpdate.map(item => {
 //       return fetch(`/api/products/${item.productId}`, {
 //         method: 'PUT',
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//         body: JSON.stringify({
-//           quantityToDecrement: item.quantity,
-//         }),
+//         headers: { 'Content-Type': 'application/json' },
+//         body: JSON.stringify({ quantityToDecrement: item.quantity }),
 //       });
 //     });
 
 //     try {
-//       // Execute all update requests in parallel for efficiency
 //       const responses = await Promise.all(updatePromises);
-      
-//       // Optionally check for any failed requests
 //       responses.forEach(async (res, index) => {
 //         if (!res.ok) {
 //           const failedItem = itemsToUpdate[index];
 //           console.error(`Failed to update inventory for: ${failedItem.name}. Status: ${res.status}`);
-//           // You could display an error message to the user here
 //         }
 //       });
 //     } catch (error) {
@@ -251,22 +238,45 @@
 //     }
 //   };
 
-//   // MODIFIED: This function now orchestrates the inventory update and UI reset.
+//   // --- MODIFICATION START ---
+//   // This function now saves the sale, then updates inventory and shows the success modal.
 //   const handlePaymentSuccess = async () => {
-//     // Step 1: Tell the backend to reduce the inventory. Await ensures this completes first.
+//     // Step 1: Save the completed sale to the database.
+//     try {
+//       // 'Card' payments are recorded as 'cash' for simplicity, 'QR Code' is 'qr'.
+//       const paymentMethodForDB = selectedPayment === 'QR Code' ? 'qr' : 'cash';
+
+//       const response = await fetch('/api/sales', {
+//         method: 'POST',
+//         headers: { 'Content-Type': 'application/json' },
+//         body: JSON.stringify({
+//           amount: totalAmount,
+//           paymentMethod: paymentMethodForDB,
+//         }),
+//       });
+
+//       if (!response.ok) {
+//         // Log an error if the sale couldn't be saved, but continue the process for the user.
+//         console.error("CRITICAL: Failed to save the sale to the database.");
+//       }
+//     } catch (error) {
+//       console.error("An error occurred while attempting to save the sale:", error);
+//     }
+
+//     // Step 2: Update the inventory for the items sold.
 //     await updateInventory();
 
-//     // Step 2: Show a success modal to the user.
+//     // Step 3: Show a success modal and prepare for the next transaction.
 //     setModal({
 //       isOpen: true,
 //       title: 'Transaction Complete!',
 //       message: 'The bill has been finalized and inventory has been updated.',
 //       showCancel: false,
 //       confirmText: 'Start New Bill',
-//       // The onConfirm action now resets the UI for the next transaction.
-//       onConfirm: handleTransactionDone, 
+//       onConfirm: handleTransactionDone,
 //     });
 //   };
+//   // --- MODIFICATION END ---
 
 //   const handleStartNewBill = () => {
 //     setModal({
@@ -309,19 +319,16 @@
 //       }
 //       setScanning(false);
 //     }
-    
 //     if (error) {
-//       if (error instanceof Error) {
-//         console.info('Scanner error:', error.message);
-//       } else {
-//         console.error('An unknown scanner error occurred:', error);
-//       }
+//       console.info('Scanner error:', (error as Error).message);
 //     }
 //   };
 
 //   // --- RENDER ---
 //   return (
 //     <>
+//       {/* The entire JSX for your component remains the same. */}
+//       {/* It correctly calls `handlePaymentSuccess` on button clicks. */}
 //       <div className="flex h-screen w-full bg-gray-100 font-sans">
 //         <div className="flex h-full w-full flex-col md:flex-row overflow-hidden">
 //           <div className="flex flex-col p-4 md:w-2/3 md:p-6 flex-1 overflow-y-auto">
@@ -473,9 +480,6 @@
 //   );
 // }
 
-
-// Example path: src/app/(lite)/billing/page.tsx
-
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -600,19 +604,22 @@ export default function BillingPage() {
     }
   }, [status, session]);
 
+  // FIXED: This effect now depends on the session 'status' and only runs when authenticated.
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await fetch('/api/products');
-        if (!res.ok) throw new Error('Failed to fetch');
-        const data: InventoryProduct[] = await res.json();
-        setInventory(data);
-      } catch (err) {
-        console.error('Error fetching inventory:', err);
-      }
-    };
-    fetchProducts();
-  }, []);
+    if (status === 'authenticated') {
+      const fetchProducts = async () => {
+        try {
+          const res = await fetch('/api/products');
+          if (!res.ok) throw new Error('Failed to fetch');
+          const data: InventoryProduct[] = await res.json();
+          setInventory(data);
+        } catch (err) {
+          console.error('Error fetching inventory:', err);
+        }
+      };
+      fetchProducts();
+    }
+  }, [status]);
 
   useEffect(() => {
     if (!productName.trim()) {
@@ -635,7 +642,7 @@ export default function BillingPage() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // --- CORE FUNCTIONS ---
+  // --- CORE FUNCTIONS (No changes needed) ---
   const closeModal = () => setModal({ ...modal, isOpen: false });
 
   const addToCart = (name: string, price: number, productId?: string) => {
@@ -714,14 +721,9 @@ export default function BillingPage() {
     }
   };
 
-  // --- MODIFICATION START ---
-  // This function now saves the sale, then updates inventory and shows the success modal.
   const handlePaymentSuccess = async () => {
-    // Step 1: Save the completed sale to the database.
     try {
-      // 'Card' payments are recorded as 'cash' for simplicity, 'QR Code' is 'qr'.
       const paymentMethodForDB = selectedPayment === 'QR Code' ? 'qr' : 'cash';
-
       const response = await fetch('/api/sales', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -730,19 +732,13 @@ export default function BillingPage() {
           paymentMethod: paymentMethodForDB,
         }),
       });
-
       if (!response.ok) {
-        // Log an error if the sale couldn't be saved, but continue the process for the user.
         console.error("CRITICAL: Failed to save the sale to the database.");
       }
     } catch (error) {
       console.error("An error occurred while attempting to save the sale:", error);
     }
-
-    // Step 2: Update the inventory for the items sold.
     await updateInventory();
-
-    // Step 3: Show a success modal and prepare for the next transaction.
     setModal({
       isOpen: true,
       title: 'Transaction Complete!',
@@ -752,7 +748,6 @@ export default function BillingPage() {
       onConfirm: handleTransactionDone,
     });
   };
-  // --- MODIFICATION END ---
 
   const handleStartNewBill = () => {
     setModal({
@@ -800,11 +795,9 @@ export default function BillingPage() {
     }
   };
 
-  // --- RENDER ---
+  // --- RENDER (No changes needed) ---
   return (
     <>
-      {/* The entire JSX for your component remains the same. */}
-      {/* It correctly calls `handlePaymentSuccess` on button clicks. */}
       <div className="flex h-screen w-full bg-gray-100 font-sans">
         <div className="flex h-full w-full flex-col md:flex-row overflow-hidden">
           <div className="flex flex-col p-4 md:w-2/3 md:p-6 flex-1 overflow-y-auto">

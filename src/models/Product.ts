@@ -1,45 +1,74 @@
-// // src/Models/Product.ts
+// // src/models/Product.ts
 
-// import mongoose, { Schema, Document } from 'mongoose';
+// import mongoose, { Schema, Document, Model } from 'mongoose';
 
+// // Interface describing the properties a Product document has
 // export interface IProduct extends Document {
 //   name: string;
+//   quantity: number;
+//   buyingPrice?: number;
+//   sellingPrice: number;
+//   gstRate: number;
+//   image?: string;
+//   sku?: string;
 //   description?: string;
-//   price: number;
-//   inStock: boolean;
-//   createdAt: Date;
 // }
 
-// const ProductSchema: Schema = new Schema({
+// const ProductSchema: Schema<IProduct> = new Schema({
 //   name: {
 //     type: String,
-//     required: true,
+//     required: [true, 'Product name is required.'],
+//     trim: true,
+//   },
+//   quantity: {
+//     type: Number,
+//     required: [true, 'Product quantity is required.'],
+//     default: 0,
+//   },
+//   buyingPrice: {
+//     type: Number,
+//     default: 0,
+//   },
+//   sellingPrice: {
+//     type: Number,
+//     required: [true, 'Product selling price is required.'],
+//     default: 0,
+//   },
+//   gstRate: {
+//     type: Number,
+//     required: [true, 'GST rate is required.'],
+//     default: 0,
+//   },
+//   image: {
+//     type: String,
+//     default: null,
+//   },
+//   sku: {
+//     type: String,
+//     trim: true,
+//     unique: true,
+//     sparse: true, 
 //   },
 //   description: {
 //     type: String,
+//     trim: true,
 //   },
-//   price: {
-//     type: Number,
-//     required: true,
-//   },
-//   inStock: {
-//     type: Boolean,
-//     default: true,
-//   },
-//   createdAt: {
-//     type: Date,
-//     default: Date.now,
-//   },
+// }, {
+//   // Add timestamps (createdAt, updatedAt)
+//   timestamps: true, 
 // });
 
-// export default mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema);
+// // THIS IS THE MOST IMPORTANT LINE. IT FORCES MONGOOSE TO USE THE 'Product' COLLECTION.
+// const Product: Model<IProduct> = mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema, 'Product');
 
-// src/models/Product.ts
+// export default Product;
+
 
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 // Interface describing the properties a Product document has
 export interface IProduct extends Document {
+  tenantId: string; // <-- ADD THIS LINE
   name: string;
   quantity: number;
   buyingPrice?: number;
@@ -51,6 +80,11 @@ export interface IProduct extends Document {
 }
 
 const ProductSchema: Schema<IProduct> = new Schema({
+  tenantId: { // <-- ADD THIS OBJECT
+    type: String,
+    required: true,
+    index: true, // Adding an index improves query performance for this field
+  },
   name: {
     type: String,
     required: [true, 'Product name is required.'],
@@ -82,19 +116,21 @@ const ProductSchema: Schema<IProduct> = new Schema({
   sku: {
     type: String,
     trim: true,
-    unique: true,
-    sparse: true, 
+    // Note: SKU must be unique PER TENANT, not globally.
+    // A compound index is the best way to enforce this.
+    // We will remove 'unique: true' here and create the index below.
   },
   description: {
     type: String,
     trim: true,
   },
 }, {
-  // Add timestamps (createdAt, updatedAt)
-  timestamps: true, 
+  timestamps: true,
 });
 
-// THIS IS THE MOST IMPORTANT LINE. IT FORCES MONGOOSE TO USE THE 'Product' COLLECTION.
-const Product: Model<IProduct> = mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema, 'Product');
+// Create a compound index to ensure SKU is unique per tenantId
+ProductSchema.index({ tenantId: 1, sku: 1 }, { unique: true, sparse: true });
+
+const Product: Model<IProduct> = mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema);
 
 export default Product;
