@@ -421,6 +421,8 @@
 //   );
 // }
 
+// src/components/Dashboard.tsx
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -456,7 +458,7 @@ const LOW_STOCK_THRESHOLD = 10;
 const REFETCH_INTERVAL = 15000; // 15 seconds
 
 // --- COMPONENT ---
-export default function DashboardComponent() {
+export default function Dashboard() { // FIXED: Renamed from DashboardComponent to Dashboard
   const { status } = useSession();
 
   // State for Sales Data
@@ -465,14 +467,14 @@ export default function DashboardComponent() {
   });
   const [activePeriod, setActivePeriod] = useState<Period>("Today");
   const [isSalesLoading, setIsSalesLoading] = useState(true);
-  const [salesError, setSalesError] = useState<string | null>(null); // FIXED: Added error state
+  const [salesError, setSalesError] = useState<string | null>(null);
 
   // State for Inventory Summary
   const [inventorySummary, setInventorySummary] = useState<InventorySummary>({
     inStock: 0, lowStock: 0, outOfStock: 0,
   });
   const [isSummaryLoading, setIsSummaryLoading] = useState(true);
-  const [summaryError, setSummaryError] = useState<string | null>(null); // FIXED: Added error state
+  const [summaryError, setSummaryError] = useState<string | null>(null);
 
   // Effect to fetch sales data
   useEffect(() => {
@@ -483,7 +485,7 @@ export default function DashboardComponent() {
 
     const fetchSales = async () => {
       setIsSalesLoading(true);
-      setSalesError(null); // Reset error on new fetch
+      setSalesError(null);
       try {
         const res = await fetch(`/api/sales?period=${activePeriod.toLowerCase()}`);
         if (!res.ok) throw new Error("Failed to fetch sales data");
@@ -491,7 +493,7 @@ export default function DashboardComponent() {
         setSalesData(data);
       } catch (err) {
         console.error("Failed to load sales data:", err);
-        setSalesError("Could not load data."); // Set user-facing error message
+        setSalesError("Could not load data.");
       } finally {
         setIsSalesLoading(false);
       }
@@ -511,8 +513,8 @@ export default function DashboardComponent() {
     }
 
     const fetchInventorySummary = async () => {
-        setIsSummaryLoading(true); // FIXED: Consistent loading state placement
-        setSummaryError(null); // Reset error on new fetch
+        setIsSummaryLoading(true);
+        setSummaryError(null);
         try {
             const res = await fetch('/api/products');
             if (!res.ok) throw new Error('Failed to fetch product data');
@@ -532,7 +534,7 @@ export default function DashboardComponent() {
             setInventorySummary(summary);
         } catch (err) {
             console.error("Failed to load inventory summary:", err);
-            setSummaryError("Could not load data."); // Set user-facing error message
+            setSummaryError("Could not load data.");
         } finally {
             setIsSummaryLoading(false);
         }
@@ -574,7 +576,7 @@ export default function DashboardComponent() {
           <div className="text-center py-10 flex items-center justify-center text-gray-500 h-36">
             <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading Sales...
           </div>
-        ) : salesError ? ( // FIXED: Render error UI
+        ) : salesError ? (
           <div className="text-center py-10 flex items-center justify-center text-red-600 h-36">
             <AlertTriangle className="w-5 h-5 mr-2" /> {salesError}
           </div>
@@ -611,7 +613,7 @@ export default function DashboardComponent() {
            <div className="text-center py-10 flex items-center justify-center text-gray-500 h-44">
              <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading Summary...
            </div>
-        ) : summaryError ? ( // FIXED: Render error UI
+        ) : summaryError ? (
           <div className="text-center py-10 flex items-center justify-center text-red-600 h-44">
             <AlertTriangle className="w-5 h-5 mr-2" /> {summaryError}
           </div>
