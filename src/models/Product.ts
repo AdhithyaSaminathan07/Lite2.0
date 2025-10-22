@@ -1,9 +1,8 @@
-// // src/models/Product.ts
-
 // import mongoose, { Schema, Document, Model } from 'mongoose';
 
 // // Interface describing the properties a Product document has
 // export interface IProduct extends Document {
+//   tenantId: string; // <-- ADD THIS LINE
 //   name: string;
 //   quantity: number;
 //   buyingPrice?: number;
@@ -15,6 +14,11 @@
 // }
 
 // const ProductSchema: Schema<IProduct> = new Schema({
+//   tenantId: { // <-- ADD THIS OBJECT
+//     type: String,
+//     required: true,
+//     index: true, // Adding an index improves query performance for this field
+//   },
 //   name: {
 //     type: String,
 //     required: [true, 'Product name is required.'],
@@ -46,20 +50,22 @@
 //   sku: {
 //     type: String,
 //     trim: true,
-//     unique: true,
-//     sparse: true, 
+//     // Note: SKU must be unique PER TENANT, not globally.
+//     // A compound index is the best way to enforce this.
+//     // We will remove 'unique: true' here and create the index below.
 //   },
 //   description: {
 //     type: String,
 //     trim: true,
 //   },
 // }, {
-//   // Add timestamps (createdAt, updatedAt)
-//   timestamps: true, 
+//   timestamps: true,
 // });
 
-// // THIS IS THE MOST IMPORTANT LINE. IT FORCES MONGOOSE TO USE THE 'Product' COLLECTION.
-// const Product: Model<IProduct> = mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema, 'Product');
+// // Create a compound index to ensure SKU is unique per tenantId
+// ProductSchema.index({ tenantId: 1, sku: 1 }, { unique: true, sparse: true });
+
+// const Product: Model<IProduct> = mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema,'Product');
 
 // export default Product;
 
@@ -68,22 +74,24 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 
 // Interface describing the properties a Product document has
 export interface IProduct extends Document {
-  tenantId: string; // <-- ADD THIS LINE
+  tenantId: string;
   name: string;
   quantity: number;
   buyingPrice?: number;
   sellingPrice: number;
   gstRate: number;
   image?: string;
-  sku?: string;
+  sku: string;
   description?: string;
 }
 
-const ProductSchema: Schema<IProduct> = new Schema({
-  tenantId: { // <-- ADD THIS OBJECT
+// The generic <IProduct> passed to `new Schema` tells TypeScript
+// what the resulting documents will look like.
+const ProductSchema = new Schema<IProduct>({
+  tenantId: {
     type: String,
     required: true,
-    index: true, // Adding an index improves query performance for this field
+    index: true,
   },
   name: {
     type: String,
@@ -116,9 +124,14 @@ const ProductSchema: Schema<IProduct> = new Schema({
   sku: {
     type: String,
     trim: true,
-    // Note: SKU must be unique PER TENANT, not globally.
-    // A compound index is the best way to enforce this.
-    // We will remove 'unique: true' here and create the index below.
+    required: [true, 'Product ID (SKU) is required.'],
+    validate: {
+        // --- START: MODIFIED SECTION ---
+        // Using `!!` ensures the result is always a boolean (true/false)
+        validator: (value: string) => !!(value && value.trim().length > 0),
+        // --- END: MODIFIED SECTION ---
+        message: 'Product ID (SKU) cannot be an empty string.'
+    }
   },
   description: {
     type: String,
@@ -128,9 +141,9 @@ const ProductSchema: Schema<IProduct> = new Schema({
   timestamps: true,
 });
 
-// Create a compound index to ensure SKU is unique per tenantId
-ProductSchema.index({ tenantId: 1, sku: 1 }, { unique: true, sparse: true });
+// Create a compound index to ensure SKU is unique per tenantId.
+ProductSchema.index({ tenantId: 1, sku: 1 }, { unique: true });
 
-const Product: Model<IProduct> = mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema);
+const Product: Model<IProduct> = mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema, 'Product');
 
 export default Product;

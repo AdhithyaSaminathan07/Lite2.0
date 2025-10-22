@@ -227,7 +227,7 @@
 // }
 
 
-
+// FILE: src/app/api/products/[id]/route.ts
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Product from "@/models/Product";

@@ -1,4 +1,4 @@
-// // src/app/(lite)/billing/page.tsx
+
 
 // 'use client';
 
@@ -124,19 +124,22 @@
 //     }
 //   }, [status, session]);
 
+//   // FIXED: This effect now depends on the session 'status' and only runs when authenticated.
 //   useEffect(() => {
-//     const fetchProducts = async () => {
-//       try {
-//         const res = await fetch('/api/products');
-//         if (!res.ok) throw new Error('Failed to fetch');
-//         const data: InventoryProduct[] = await res.json();
-//         setInventory(data);
-//       } catch (err) {
-//         console.error('Error fetching inventory:', err);
-//       }
-//     };
-//     fetchProducts();
-//   }, []);
+//     if (status === 'authenticated') {
+//       const fetchProducts = async () => {
+//         try {
+//           const res = await fetch('/api/products');
+//           if (!res.ok) throw new Error('Failed to fetch');
+//           const data: InventoryProduct[] = await res.json();
+//           setInventory(data);
+//         } catch (err) {
+//           console.error('Error fetching inventory:', err);
+//         }
+//       };
+//       fetchProducts();
+//     }
+//   }, [status]);
 
 //   useEffect(() => {
 //     if (!productName.trim()) {
@@ -159,7 +162,7 @@
 //     return () => document.removeEventListener('mousedown', handler);
 //   }, []);
 
-//   // --- CORE FUNCTIONS ---
+//   // --- CORE FUNCTIONS (No changes needed) ---
 //   const closeModal = () => setModal({ ...modal, isOpen: false });
 
 //   const addToCart = (name: string, price: number, productId?: string) => {
@@ -238,14 +241,9 @@
 //     }
 //   };
 
-//   // --- MODIFICATION START ---
-//   // This function now saves the sale, then updates inventory and shows the success modal.
 //   const handlePaymentSuccess = async () => {
-//     // Step 1: Save the completed sale to the database.
 //     try {
-//       // 'Card' payments are recorded as 'cash' for simplicity, 'QR Code' is 'qr'.
 //       const paymentMethodForDB = selectedPayment === 'QR Code' ? 'qr' : 'cash';
-
 //       const response = await fetch('/api/sales', {
 //         method: 'POST',
 //         headers: { 'Content-Type': 'application/json' },
@@ -254,19 +252,13 @@
 //           paymentMethod: paymentMethodForDB,
 //         }),
 //       });
-
 //       if (!response.ok) {
-//         // Log an error if the sale couldn't be saved, but continue the process for the user.
 //         console.error("CRITICAL: Failed to save the sale to the database.");
 //       }
 //     } catch (error) {
 //       console.error("An error occurred while attempting to save the sale:", error);
 //     }
-
-//     // Step 2: Update the inventory for the items sold.
 //     await updateInventory();
-
-//     // Step 3: Show a success modal and prepare for the next transaction.
 //     setModal({
 //       isOpen: true,
 //       title: 'Transaction Complete!',
@@ -276,7 +268,6 @@
 //       onConfirm: handleTransactionDone,
 //     });
 //   };
-//   // --- MODIFICATION END ---
 
 //   const handleStartNewBill = () => {
 //     setModal({
@@ -324,11 +315,9 @@
 //     }
 //   };
 
-//   // --- RENDER ---
+//   // --- RENDER (No changes needed) ---
 //   return (
 //     <>
-//       {/* The entire JSX for your component remains the same. */}
-//       {/* It correctly calls `handlePaymentSuccess` on button clicks. */}
 //       <div className="flex h-screen w-full bg-gray-100 font-sans">
 //         <div className="flex h-full w-full flex-col md:flex-row overflow-hidden">
 //           <div className="flex flex-col p-4 md:w-2/3 md:p-6 flex-1 overflow-y-auto">
@@ -480,6 +469,7 @@
 //   );
 // }
 
+
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -497,12 +487,15 @@ type CartItem = {
   price: number;
 };
 
+// --- CHANGE 1: Add the 'sku' field to the InventoryProduct type ---
+// This ensures TypeScript knows about the Product ID from your API.
 type InventoryProduct = {
   id: string;
   name: string;
   quantity: number;
   sellingPrice: number;
   image?: string;
+  sku?: string; // <-- ADDED THIS LINE
 };
 
 type ScannerResult = {
@@ -510,7 +503,7 @@ type ScannerResult = {
 };
 
 
-// --- MODAL COMPONENT ---
+// --- MODAL COMPONENT (No changes needed) ---
 type ModalProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -563,7 +556,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, onConfi
 
 // --- MAIN COMPONENT ---
 export default function BillingPage() {
-  // --- STATE MANAGEMENT ---
+  // --- STATE MANAGEMENT (No changes needed) ---
   const { data: session, status } = useSession();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [productName, setProductName] = useState('');
@@ -589,12 +582,12 @@ export default function BillingPage() {
     showCancel: false,
   });
 
-  // --- DERIVED STATE & CONSTANTS ---
+  // --- DERIVED STATE & CONSTANTS (No changes needed) ---
   const totalAmount = cart.reduce((sum: number, item: CartItem) => sum + item.price * item.quantity, 0);
   const merchantName = session?.user?.name || "Billzzy Lite";
   const upiQR = merchantUpi ? `upi://pay?pa=${merchantUpi}&pn=${encodeURIComponent(merchantName)}&am=${totalAmount.toFixed(2)}&cu=INR&tn=Bill%20Payment` : '';
 
-  // --- DATA FETCHING & SIDE EFFECTS ---
+  // --- DATA FETCHING & SIDE EFFECTS (No changes needed here) ---
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.email) {
       const savedData = localStorage.getItem(`userSettings-${session.user.email}`);
@@ -604,7 +597,6 @@ export default function BillingPage() {
     }
   }, [status, session]);
 
-  // FIXED: This effect now depends on the session 'status' and only runs when authenticated.
   useEffect(() => {
     if (status === 'authenticated') {
       const fetchProducts = async () => {
@@ -621,16 +613,24 @@ export default function BillingPage() {
     }
   }, [status]);
 
+  // --- CHANGE 2: Update the search logic to include the 'sku' field ---
   useEffect(() => {
     if (!productName.trim()) {
       setShowSuggestions(false);
       return;
     }
     const query = productName.trim().toLowerCase();
-    const filtered = inventory.filter((p: InventoryProduct) => p.name.toLowerCase().includes(query)).slice(0, 5);
+    const filtered = inventory.filter((p: InventoryProduct) => 
+        // Condition 1: Check if product name includes the query
+        p.name.toLowerCase().includes(query) ||
+        // Condition 2: Check if product SKU includes the query (and SKU exists)
+        (p.sku && p.sku.toLowerCase().includes(query))
+    ).slice(0, 5); // Limit to 5 suggestions
+
     setSuggestions(filtered);
     setShowSuggestions(filtered.length > 0);
   }, [productName, inventory]);
+
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -642,7 +642,7 @@ export default function BillingPage() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // --- CORE FUNCTIONS (No changes needed) ---
+  // --- CORE FUNCTIONS (No changes needed here) ---
   const closeModal = () => setModal({ ...modal, isOpen: false });
 
   const addToCart = (name: string, price: number, productId?: string) => {
@@ -779,14 +779,24 @@ export default function BillingPage() {
     setWhatsAppNumber('');
   };
 
+  // --- CHANGE 3: Update the scanner logic to also find products by SKU ---
   const handleScannerUpdate = (error: unknown, result: ScannerResult | undefined) => {
     if (result?.getText()) {
       const scannedValue = result.getText();
-      const foundProduct = inventory.find(p => p.id.toString() === scannedValue || p.name.toLowerCase() === scannedValue.toLowerCase());
+      const lowercasedScannedValue = scannedValue.toLowerCase();
+
+      // Find product by MongoDB ID, SKU, or Name (case-insensitive)
+      const foundProduct = inventory.find(p => 
+        p.id.toString() === scannedValue || 
+        (p.sku && p.sku.toLowerCase() === lowercasedScannedValue) ||
+        p.name.toLowerCase() === lowercasedScannedValue
+      );
+      
       if (foundProduct) {
         addToCart(foundProduct.name, foundProduct.sellingPrice, foundProduct.id);
       } else {
-        addToCart(scannedValue, 0);
+        // If not found in inventory, add it as a new item with the scanned value as its name
+        addToCart(scannedValue, 0); 
       }
       setScanning(false);
     }
@@ -810,12 +820,17 @@ export default function BillingPage() {
             </header>
             <div className="flex-shrink-0 rounded-xl bg-white p-4 mb-4 shadow-sm">
               <div ref={suggestionsRef} className="relative">
-                <input type="text" placeholder="Search or enter product name..." className="w-full rounded-lg border-2 border-gray-200 p-3 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500" value={productName} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProductName(e.target.value)} />
+                <input type="text" placeholder="Search by Product Name or ID..." className="w-full rounded-lg border-2 border-gray-200 p-3 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500" value={productName} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProductName(e.target.value)} />
                 {showSuggestions && (
                   <div className="absolute z-10 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg">
                     {suggestions.map((s: InventoryProduct) => (
                       <div key={s.id} onClick={() => addToCart(s.name, s.sellingPrice, s.id)} className="cursor-pointer border-b p-3 last:border-b-0 hover:bg-indigo-50">
-                        <div className="flex justify-between font-semibold"><span>{s.name}</span><span>₹{s.sellingPrice.toFixed(2)}</span></div>
+                        <div className="flex justify-between font-semibold">
+                          <span>{s.name}</span>
+                          <span>₹{s.sellingPrice.toFixed(2)}</span>
+                        </div>
+                        {/* Optionally show the SKU in the suggestion list */}
+                        {s.sku && <p className="text-xs text-gray-500">ID: {s.sku}</p>}
                       </div>
                     ))}
                   </div>
