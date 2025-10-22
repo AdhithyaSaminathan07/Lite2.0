@@ -55,72 +55,167 @@
 
 // export { handler as GET, handler as POST };
 
-import NextAuth from "next-auth";
+// import NextAuth from "next-auth";
+// import GoogleProvider from "next-auth/providers/google";
+// import CredentialsProvider from "next-auth/providers/credentials";
+
+// // It's a good practice to put the auth options in a separate object
+// import { NextAuthOptions } from 'next-auth';
+
+// export const authOptions: NextAuthOptions = {
+//   providers: [
+//     GoogleProvider({
+//       clientId: process.env.GOOGLE_CLIENT_ID as string,
+//       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+//     }),
+//     CredentialsProvider({
+//         name: 'Credentials',
+//         credentials: {
+//           email: { label: "Email", type: "email" },
+//           password: { label: "Password", type: "password" }
+//         },
+//         async authorize(credentials, req) {
+//             // The middleware makes the header available on the Next.js request object `req`
+//             const tenantId = req.headers?.['x-tenant-id'];
+
+//             if (!tenantId) {
+//                 console.error("Authorization Error: No Tenant ID provided in request.");
+//                 return null; // Or throw an error
+//             }
+
+//             console.log(`Authorizing user for tenant: ${tenantId}`);
+
+//             // For now, your logic is for a demo user.
+//             // In a real app, you would also check the tenantId in your database.
+//             // e.g., const user = await User.findOne({ email: credentials.email, tenantId: tenantId });
+//             const DEMO_CREDENTIALS = { email: 'demo@billzzy.com', password: 'demo123' };
+
+//             if (
+//               credentials?.email === DEMO_CREDENTIALS.email &&
+//               credentials?.password === DEMO_CREDENTIALS.password
+//             ) {
+//               // IMPORTANT: Attach the tenantId to the user object you return
+//               return { 
+//                 id: "demo-user-1", 
+//                 name: "Demo User", 
+//                 email: DEMO_CREDENTIALS.email,
+//                 tenantId: tenantId // <-- Attach tenantId here
+//               };
+//             }
+
+//             return null;
+//         }
+//     })
+//   ],
+//   callbacks: {
+//     // This callback is used to add the tenantId to the JWT
+//     async jwt({ token, user }) {
+//       if (user) {
+//         // On sign in, the `user` object from `authorize` is available
+//         token.tenantId = (user as any).tenantId;
+//       }
+//       return token;
+//     },
+//     // This callback is used to add the tenantId to the session object
+//     async session({ session, token }) {
+//       // The token now has the tenantId we added in the `jwt` callback
+//       if (session.user && token.tenantId) {
+//         (session.user as any).tenantId = token.tenantId;
+//       }
+//       return session;
+//     },
+//   },
+//   pages: {
+//     signIn: '/login',
+//   },
+//   secret: process.env.NEXTAUTH_SECRET,
+// };
+
+// const handler = NextAuth(authOptions);
+
+// export { handler as GET, handler as POST };
+
+
+import NextAuth, { NextAuthOptions } from "next-auth";
+// FIX 2 (Warning): Removed unused 'JWT' import
+// import { JWT } from "next-auth/jwt"; 
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-// It's a good practice to put the auth options in a separate object
-import { NextAuthOptions } from 'next-auth';
+// By using module augmentation, you are telling TypeScript what the shape
+// of your User, Session, and JWT objects should be.
+declare module "next-auth" {
+  interface Session {
+    user: {
+      tenantId?: string | unknown; // Use 'unknown' if you are not sure of the type initially
+    } & {
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+    };
+  }
 
-export const authOptions: NextAuthOptions = {
+  interface User {
+    tenantId?: string | unknown;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    tenantId?: string | unknown;
+  }
+}
+
+// FIX 1 (Error): Removed the "export" keyword. This object should not be exported from a route file.
+const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     }),
     CredentialsProvider({
-        name: 'Credentials',
-        credentials: {
-          email: { label: "Email", type: "email" },
-          password: { label: "Password", type: "password" }
-        },
-        async authorize(credentials, req) {
-            // The middleware makes the header available on the Next.js request object `req`
-            const tenantId = req.headers?.['x-tenant-id'];
+      name: 'Credentials',
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials, req) {
+        const tenantId = req.headers?.['x-tenant-id'];
 
-            if (!tenantId) {
-                console.error("Authorization Error: No Tenant ID provided in request.");
-                return null; // Or throw an error
-            }
-
-            console.log(`Authorizing user for tenant: ${tenantId}`);
-
-            // For now, your logic is for a demo user.
-            // In a real app, you would also check the tenantId in your database.
-            // e.g., const user = await User.findOne({ email: credentials.email, tenantId: tenantId });
-            const DEMO_CREDENTIALS = { email: 'demo@billzzy.com', password: 'demo123' };
-
-            if (
-              credentials?.email === DEMO_CREDENTIALS.email &&
-              credentials?.password === DEMO_CREDENTIALS.password
-            ) {
-              // IMPORTANT: Attach the tenantId to the user object you return
-              return { 
-                id: "demo-user-1", 
-                name: "Demo User", 
-                email: DEMO_CREDENTIALS.email,
-                tenantId: tenantId // <-- Attach tenantId here
-              };
-            }
-
-            return null;
+        if (!tenantId) {
+          console.error("Authorization Error: No Tenant ID provided in request.");
+          return null;
         }
+
+        console.log(`Authorizing user for tenant: ${tenantId}`);
+        const DEMO_CREDENTIALS = { email: 'demo@billzzy.com', password: 'demo123' };
+
+        if (
+          credentials?.email === DEMO_CREDENTIALS.email &&
+          credentials?.password === DEMO_CREDENTIALS.password
+        ) {
+          return {
+            id: "demo-user-1",
+            name: "Demo User",
+            email: DEMO_CREDENTIALS.email,
+            tenantId: tenantId // <-- Attach tenantId here
+          };
+        }
+
+        return null;
+      }
     })
   ],
   callbacks: {
-    // This callback is used to add the tenantId to the JWT
     async jwt({ token, user }) {
       if (user) {
-        // On sign in, the `user` object from `authorize` is available
-        token.tenantId = (user as any).tenantId;
+        token.tenantId = user.tenantId;
       }
       return token;
     },
-    // This callback is used to add the tenantId to the session object
     async session({ session, token }) {
-      // The token now has the tenantId we added in the `jwt` callback
       if (session.user && token.tenantId) {
-        (session.user as any).tenantId = token.tenantId;
+        session.user.tenantId = token.tenantId;
       }
       return session;
     },

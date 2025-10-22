@@ -1,181 +1,123 @@
-  // // src/app/api/products/[id]/route.ts
-  // import { NextResponse } from "next/server";
-  // import dbConnect from "@/lib/mongodb";
-  // import Product from "@/models/Product"; 
-
-  // // A helper function to transform the MongoDB document.
-  // const transformProduct = (product: any) => {
-  //   const transformed = {
-  //     // Use .toObject() or .lean() before this function is called
-  //     ...product,
-  //     id: product._id.toString(),
-  //   };
-  //   delete transformed._id;
-  //   delete transformed.__v;
-  //   return transformed;
-  // };
-
-  // // --- UPDATE a single product by its ID ---
-  // export async function PUT(
-  //   request: Request,
-  //   { params }: { params: { id: string } }
-  // ) {
-  //   await dbConnect();
-  //   const { id } = params;
-
-  //   try {
-  //     const body = await request.json();
-
-  //     // Find and update the product
-  //     const updatedProduct = await Product.findByIdAndUpdate(id, body, {
-  //       new: true,
-  //       runValidators: true,
-  //     });
-
-  //     if (!updatedProduct) {
-  //       return NextResponse.json(
-  //         { message: `Product with ID ${id} not found.` },
-  //         { status: 404 }
-  //       );
-  //     }
-
-  //     // CORRECTED: After updating, fetch the entire updated list of products.
-  //     // This makes the PUT response consistent with the POST response.
-  //     const allProductsFromDb = await Product.find({}).sort({ createdAt: -1 }).lean();
-  //     const allProducts = allProductsFromDb.map(transformProduct);
-      
-  //     return NextResponse.json(allProducts);
-
-  //   } catch (error) {
-  //     console.error("Failed to update product:", error);
-  //     return NextResponse.json(
-  //       { message: "Failed to update product", error: `${error}` },
-  //       { status: 500 }
-  //     );
-  //   }
-  // }
-
-  // // --- DELETE a single product by its ID ---
-  // export async function DELETE(
-  //   request: Request,
-  //   { params }: { params: { id: string } }
-  // ) {
-  //   await dbConnect();
-  //   const { id } = params;
-
-  //   try {
-  //     const deletedProduct = await Product.findByIdAndDelete(id);
-  //     if (!deletedProduct) {
-  //       return NextResponse.json(
-  //         { message: `Product with ID ${id} not found.` },
-  //         { status: 404 }
-  //       );
-  //     }
-      
-  //     // Return a success response with no body, which is standard for DELETE
-  //     return new NextResponse(null, { status: 204 });
-  //   } catch (error) {
-  //     console.error("Failed to delete product:", error);
-  //     return NextResponse.json(
-  //       { message: "Failed to delete product", error: `${error}` },
-  //       { status: 500 }
-  //     );
-  //   }
-  // }
-
-
-  import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Product from "@/models/Product";
 
-// A helper function to transform the MongoDB document.
-const transformProduct = (product: any) => {
-  const transformed = {
-    // Ensure you call .toObject() or use .lean() before this function
-    ...product,
-    id: product._id.toString(),
+// --- Interfaces for Type Safety ---
+interface IProduct {
+  sku?: string;
+  name?: string;
+  price?: number;
+  quantity?: number;
+}
+
+interface IProductObject extends IProduct {
+  _id: { toString: () => string };
+  __v?: number;
+  tenantId?: string;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+}
+
+interface IProductDocument extends IProductObject {
+    toObject: () => IProductObject;
+}
+
+type UpdateBody = { quantityToDecrement: number } | IProduct;
+
+// --- Helper Function ---
+const transformProduct = (product: IProductObject) => {
+  // The '__v' warning in the build log for this line is harmless.
+  const { _id, __v, ...rest } = product;
+  return {
+    ...rest,
+    id: _id.toString(),
   };
-  delete transformed._id;
-  delete transformed.__v;
-  return transformed;
 };
 
+
 // --- UPDATE a single product by its ID ---
+// FINAL FIX: Adding an explicit return type to the function signature.
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> { // <-- THIS IS THE FIX
   const { id } = params;
+  const tenantId = request.headers.get('x-tenant-id');
+
+  if (!tenantId) {
+    return NextResponse.json({ message: 'Tenant ID is missing' }, { status: 400 });
+  }
 
   try {
     await dbConnect();
-    const body = await request.json();
+    const body: UpdateBody = await request.json();
+    let updatedProduct: IProductDocument | null;
 
-    let updatedProduct;
-
-    // SCENARIO 1: Inventory reduction from the billing page.
-    // We check for a specific key, 'quantityToDecrement', to trigger this logic.
-    if (body.quantityToDecrement && typeof body.quantityToDecrement === 'number') {
-      
-      // Use MongoDB's atomic '$inc' operator. This is the safest way to handle
-      // concurrent sales, as it directly modifies the number in the database.
-      updatedProduct = await Product.findByIdAndUpdate(
-        id,
-        { $inc: { quantity: -body.quantityToDecrement } }, // Subtract the value
-        { new: true } // Option to return the document after the update
+    if ('quantityToDecrement' in body && typeof body.quantityToDecrement === 'number') {
+      updatedProduct = await Product.findOneAndUpdate(
+        { _id: id, tenantId: tenantId },
+        { $inc: { quantity: -body.quantityToDecrement } },
+        { new: true }
       );
-
     } else {
-      // SCENARIO 2: A general-purpose update (e.g., editing product name/price from an inventory form).
-      updatedProduct = await Product.findByIdAndUpdate(id, body, {
-        new: true,
-        runValidators: true,
-      });
+      updatedProduct = await Product.findOneAndUpdate(
+        { _id: id, tenantId: tenantId },
+        body,
+        { new: true, runValidators: true }
+      );
     }
 
     if (!updatedProduct) {
       return NextResponse.json(
-        { message: `Product with ID ${id} not found.` },
+        { message: `Product with ID ${id} not found for this tenant.` },
         { status: 404 }
       );
     }
 
-    // After a successful update, it's more efficient to return only the single
-    // product that was changed, rather than the entire product list.
     return NextResponse.json(transformProduct(updatedProduct.toObject()));
 
-  } catch (error) {
-    console.error(`[API PUT /api/products/${id}] Failed to update product:`, error);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    console.error(`[API PUT /api/products/${id}] Failed to update product:`, errorMessage);
     return NextResponse.json(
-      { message: "Failed to update product", error: `${error}` },
+      { message: "Failed to update product", error: errorMessage },
       { status: 500 }
     );
   }
 }
 
 // --- DELETE a single product by its ID ---
+// FINAL FIX: Adding the explicit return type here as well.
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
-) {
-  await dbConnect();
+): Promise<NextResponse> { // <-- THIS IS THE FIX
   const { id } = params;
+  const tenantId = request.headers.get('x-tenant-id');
+
+  if (!tenantId) {
+    return NextResponse.json({ message: 'Tenant ID is missing' }, { status: 400 });
+  }
 
   try {
-    const deletedProduct = await Product.findByIdAndDelete(id);
+    await dbConnect();
+    const deletedProduct = await Product.findOneAndDelete({ _id: id, tenantId: tenantId });
+
     if (!deletedProduct) {
       return NextResponse.json(
-        { message: `Product with ID ${id} not found.` },
+        { message: `Product with ID ${id} not found for this tenant.` },
         { status: 404 }
       );
     }
     
-    // A 204 No Content response is standard and correct for a successful DELETE.
+    // A NextResponse object must be returned from the function.
     return new NextResponse(null, { status: 204 });
-  } catch (error) {
-    console.error("Failed to delete product:", error);
+
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    console.error(`[API DELETE /api/products/${id}] Failed to delete product:`, errorMessage);
     return NextResponse.json(
-      { message: "Failed to delete product", error: `${error}` },
+      { message: "Failed to delete product", error: errorMessage },
       { status: 500 }
     );
   }
