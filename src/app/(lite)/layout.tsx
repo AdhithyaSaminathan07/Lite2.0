@@ -145,7 +145,5 @@ export default function AppLayout({
     );
   }
 
-  // If the user is not authenticated and not loading, render nothing.
-  // The useEffect hook will handle the redirect.
   return null;
 }
