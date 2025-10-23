@@ -493,9 +493,10 @@
 // }
 
 
+
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import BarcodeScannerComponent from 'react-qr-barcode-scanner';
 import {
@@ -584,7 +585,8 @@ const Modal: React.FC<ModalProps> = ({
       </div>
     </div>
   );
-};
+});
+Modal.displayName = 'Modal';
 
 export default function BillingPage() {
   const { data: session, status } = useSession();
@@ -598,6 +600,12 @@ export default function BillingPage() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const suggestionsRef = useRef<HTMLDivElement | null>(null);
 
+  // --- REFS ---
+  const suggestionsRef = useRef<HTMLDivElement | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerContainerId = "billing-scanner-container";
+
+  // --- MODAL STATE ---
   const [modal, setModal] = useState({
     isOpen: false,
     title: '',
@@ -675,9 +683,25 @@ export default function BillingPage() {
     setProductName('');
     setProductPrice('');
     setShowSuggestions(false);
-  };
+  }, []);
 
-  const handleManualAdd = () => {
+  const handleScanResult = useCallback((scannedValue: string) => {
+    const lowercasedScannedValue = scannedValue.toLowerCase();
+    const foundProduct = inventory.find(p =>
+      p.id.toString() === scannedValue ||
+      (p.sku && p.sku.toLowerCase() === lowercasedScannedValue) ||
+      p.name.toLowerCase() === lowercasedScannedValue
+    );
+
+    if (foundProduct) {
+      addToCart(foundProduct.name, foundProduct.sellingPrice, foundProduct.id);
+    } else {
+      addToCart(scannedValue, 0);
+    }
+    setScanning(false); // Close scanner on successful scan
+  }, [inventory, addToCart]);
+
+  const handleManualAdd = useCallback(() => {
     if (!productName.trim() || !productPrice || productPrice <= 0) {
       setModal({
         isOpen: true,
