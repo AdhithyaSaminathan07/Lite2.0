@@ -1,20 +1,23 @@
-// In: src/app/api/auth/[...nextauth]/route.ts
+// // In: src/app/api/auth/[...nextauth]/route.ts
 import NextAuth, { NextAuthOptions } from "next-auth";
+// FIX 2 (Warning): Removed unused 'JWT' import
+// import { JWT } from "next-auth/jwt"; 
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-// --- TYPE AUGMENTATION ---
-// This tells TypeScript the correct shape of our session and token.
+// By using module augmentation, you are telling TypeScript what the shape
+// of your User, Session, and JWT objects should be.
 declare module "next-auth" {
   interface Session {
     user: {
-      tenantId: string; // tenantId is a required string
+      tenantId?: string | unknown; // Use 'unknown' if you are not sure of the type initially
     } & {
       name?: string | null;
       email?: string | null;
       image?: string | null;
     };
   }
+
   interface User {
     tenantId?: string | unknown;
   }
@@ -22,18 +25,12 @@ declare module "next-auth" {
 
 declare module "next-auth/jwt" {
   interface JWT {
-    tenantId: string; // tenantId is a required string
+    tenantId?: string | unknown;
   }
 }
 
-// =================================================================
-// CRITICAL FIX: `authOptions` MUST be exported.
-// =================================================================
-export const authOptions: NextAuthOptions = {
-  // Explicitly define the session strategy. This is best practice.
-  session: {
-    strategy: "jwt",
-  },
+// FIX 1 (Error): Removed the "export" keyword. This object should not be exported from a route file.
+const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
@@ -47,36 +44,42 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials, req) {
         const tenantId = req.headers?.['x-tenant-id'];
-        if (!tenantId) return null;
-        const DEMO_CREDENTIALS = { email: 'demo@billzzy.com', password: 'demo123' };
-        if (credentials?.email === DEMO_CREDENTIALS.email && credentials?.password === DEMO_CREDENTIALS.password) {
-          return { id: "demo-user-1", name: "Demo User", email: DEMO_CREDENTIALS.email, tenantId: tenantId };
+
+        if (!tenantId) {
+          console.error("Authorization Error: No Tenant ID provided in request.");
+          return null;
         }
+
+        console.log(`Authorizing user for tenant: ${tenantId}`);
+        const DEMO_CREDENTIALS = { email: 'demo@billzzy.com', password: 'demo123' };
+
+        if (
+          credentials?.email === DEMO_CREDENTIALS.email &&
+          credentials?.password === DEMO_CREDENTIALS.password
+        ) {
+          return {
+            id: "demo-user-1",
+            name: "Demo User",
+            email: DEMO_CREDENTIALS.email,
+            tenantId: tenantId // <-- Attach tenantId here
+          };
+        }
+
         return null;
       }
     })
   ],
   callbacks: {
-    // =================================================================
-    // CRITICAL FIX: This robust `jwt` callback ensures tenantId is added on sign-in.
-    // =================================================================
-    async jwt({ token, user, account }) {
-      // This block runs ONLY on initial sign-in.
-      if (user && account) {
-        const tenantId = (account.provider === 'google' && user.email) 
-          ? user.email 
-          : user.tenantId as string;
-        
-        if (tenantId) {
-          token.tenantId = tenantId;
-        }
+    async jwt({ token, user }) {
+      if (user) {
+        token.tenantId = user.tenantId;
       }
-      // On subsequent requests, the token is returned as-is.
       return token;
     },
     async session({ session, token }) {
-      // This copies the tenantId from the token to the session object.
-      session.user.tenantId = token.tenantId;
+      if (session.user && token.tenantId) {
+        session.user.tenantId = token.tenantId;
+      }
       return session;
     },
   },
