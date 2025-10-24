@@ -1,3 +1,5 @@
+// src/models/Sales.ts
+
 import mongoose, { Schema, models, Document } from "mongoose";
 
 export interface ISale extends Document {
