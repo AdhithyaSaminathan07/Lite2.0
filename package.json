@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@tanstack/react-virtual": "^3.13.12",
     "@yudiel/react-qr-scanner": "^2.4.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.22",
