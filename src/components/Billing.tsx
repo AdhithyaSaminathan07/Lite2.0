@@ -461,7 +461,6 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
-// FIX: Removed the failing import for BarcodeScanningResult
 import { Scanner } from '@yudiel/react-qr-scanner';
 import QRCode from 'react-qr-code';
 import {
@@ -486,6 +485,11 @@ type InventoryProduct = {
   sellingPrice: number;
   image?: string;
   sku?: string;
+};
+
+// A minimal local type for the scanner result to avoid using 'any'
+type ScanResult = {
+    rawValue: string;
 };
 
 // --- MODAL COMPONENT ---
@@ -599,8 +603,7 @@ export default function BillingPage() {
     setShowSuggestions(false);
   }, []);
 
-  // FIX: Removed the explicit type annotation from 'results'. TypeScript will infer it.
-  const handleScan = useCallback((results: any[]) => {
+  const handleScan = useCallback((results: ScanResult[]) => {
     if (results && results[0]) {
       const scannedValue = results[0].rawValue;
       setScanning(false);
@@ -734,7 +737,19 @@ export default function BillingPage() {
               <button onClick={() => { setShowPaymentOptions(p => !p); setShowFinalizeOptions(false); }} className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-[#5a4fcf] py-3 font-semibold text-white hover:bg-[#4c42b8] disabled:bg-gray-400" disabled={cart.length === 0}><CreditCard size={16} /><span>Finalize & Pay</span></button>
             </div>
             {showFinalizeOptions && cart.length > 0 && (
-              <div className="flex gap-2 pt-2"><input type="tel" value={whatsAppNumber} onChange={(e) => setWhatsAppNumber(e.target.value)} placeholder="WhatsApp Number (e.g. 91...)" className="flex-grow rounded-lg border-2 p-2 focus:border-green-500" /><button onClick={handleWhatsAppShare} className="rounded-lg bg-green-500 p-2 text-white hover:bg-green-600"><Send size={20} /></button></div>
+                <div className="space-y-3 rounded-lg bg-gray-50 p-3 pt-2">
+                    {showWhatsAppInput ? (
+                        <div className="flex gap-2">
+                            <input type="tel" value={whatsAppNumber} onChange={(e) => setWhatsAppNumber(e.target.value)} placeholder="WhatsApp Number" className="flex-grow rounded-lg border-2 border-gray-300 p-2 outline-none focus:border-green-500" />
+                            <button onClick={handleWhatsAppShare} className="rounded-lg bg-green-500 p-2 text-white hover:bg-green-600"><Send size={20} /></button>
+                        </div>
+                    ) : (
+                        <button onClick={() => setShowWhatsAppInput(true)} className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-500 py-2 px-3 font-semibold text-white transition-all hover:bg-green-600">
+                            <MessageSquare size={16} />
+                            <span>Share on WhatsApp</span>
+                        </button>
+                    )}
+                </div>
             )}
             {showPaymentOptions && cart.length > 0 && (
               <div className="space-y-3 border-t pt-4">
@@ -751,13 +766,15 @@ export default function BillingPage() {
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80">
           <div className="w-72 rounded-xl bg-white p-3 relative shadow-lg">
             <div className="flex justify-between items-center mb-2"><h3 className="font-semibold text-[#5a4fcf] text-sm">Scan Barcode / QR</h3><button onClick={() => setScanning(false)} className="text-gray-500 hover:text-gray-700"><X size={20} /></button></div>
+            {/* eslint-disable @typescript-eslint/no-explicit-any */}
             <Scanner
                 constraints={{ facingMode: 'environment' }}
-                onScan={handleScan}
+                onScan={handleScan as any}
                 scanDelay={200}
                 {...({ torch: flashOn } as any)}
                 styles={{ container: { width: '100%', height: 220, position: 'relative', borderRadius: '8px', overflow: 'hidden' } }}
             />
+            {/* eslint-enable @typescript-eslint/no-explicit-any */}
             <button onClick={() => setFlashOn(f => !f)} className="mt-2 flex items-center justify-center gap-2 w-full rounded-md bg-[#5a4fcf] py-2 text-white font-medium hover:bg-[#4c42b8]"><Sun size={16} /><span>{flashOn ? 'Flash On' : 'Flash Off'}</span></button>
           </div>
         </div>
