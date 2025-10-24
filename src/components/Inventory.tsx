@@ -616,10 +616,11 @@ import { useSession } from "next-auth/react";
 import * as XLSX from "xlsx";
 import { Upload, Edit2, Plus, X, Trash2, Search, Image as ImageIcon, Camera, Loader2, Info, AlertTriangle } from "lucide-react";
 import { motion, useAnimationControls, PanInfo } from "framer-motion";
-import { Html5Qrcode } from "html5-qrcode";
 import Image from "next/image";
-// OPTIMIZATION: Import the virtualization library
 import { useVirtualizer } from "@tanstack/react-virtual";
+
+// SPEED-UP: Import the same fast scanner used in the Billing component
+import { Scanner } from "@yudiel/react-qr-scanner";
 
 // --- CONFIGURATION ---
 const LOW_STOCK_THRESHOLD = 10;
@@ -659,7 +660,7 @@ interface MobileProductCardProps {
   onDelete: (id: string) => void;
 }
 
-const MobileProductCard: FC<MobileProductCardProps> = ({ product, isSwiped, onSwipe, onEdit, onDelete }) => {
+const MobileProductCard: FC<MobileProductCardProps> = React.memo(({ product, isSwiped, onSwipe, onEdit, onDelete }) => {
   const controls = useAnimationControls();
   const ACTION_WIDTH = 160;
   const alertThreshold = product.lowStockThreshold ?? LOW_STOCK_THRESHOLD;
@@ -722,8 +723,8 @@ const MobileProductCard: FC<MobileProductCardProps> = ({ product, isSwiped, onSw
       </motion.div>
     </div>
   );
-};
-
+});
+MobileProductCard.displayName = 'MobileProductCard';
 
 // --- DESKTOP PRODUCT TABLE (Unchanged) ---
 const DesktopProductTable: FC<{ products: Product[]; onEdit: (p: Product) => void; onDelete: (id: string) => void; }> = ({ products, onEdit, onDelete }) => (
@@ -781,7 +782,7 @@ const DesktopProductTable: FC<{ products: Product[]; onEdit: (p: Product) => voi
       </div>
 );
 
-// --- PRODUCT FORM MODAL (Unchanged) ---
+// --- PRODUCT FORM MODAL (With Upgraded Scanner) ---
 type ProductFormData = Omit<Product, 'id'> & { id?: string };
 type ProductFormState = Omit<ProductFormData, 'quantity' | 'buyingPrice' | 'sellingPrice' | 'gstRate' | 'lowStockThreshold'> & {
     quantity?: number | '';
@@ -797,49 +798,37 @@ interface ProductFormModalProps {
 }
 
 const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose }) => {
-    const getInitialState = (): ProductFormState => {
+    const getInitialState = useCallback((): ProductFormState => {
         if (product) {
             return {
                 ...product,
-                quantity: product.quantity ?? '',
-                buyingPrice: product.buyingPrice ?? '',
-                sellingPrice: product.sellingPrice ?? '',
-                gstRate: product.gstRate ?? '',
+                quantity: product.quantity ?? '', buyingPrice: product.buyingPrice ?? '',
+                sellingPrice: product.sellingPrice ?? '', gstRate: product.gstRate ?? '',
                 lowStockThreshold: product.lowStockThreshold ?? ''
             };
         }
         return {
-            name: "", sku: "", quantity: '', buyingPrice: '',
-            sellingPrice: '', gstRate: '', image: '', lowStockThreshold: ''
+            name: "", sku: "", quantity: '', buyingPrice: '', sellingPrice: '',
+            gstRate: '', image: '', lowStockThreshold: ''
         };
-    };
+    }, [product]);
 
     const [formData, setFormData] = useState<ProductFormState>(getInitialState);
     const [imagePreview, setImagePreview] = useState<string | null>(product?.image || null);
     const [imageFile, setImageFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isScannerOpen, setIsScannerOpen] = useState(false);
-    const scannerRef = useRef<Html5Qrcode | null>(null);
-    const readerId = "qr-reader-modal";
-
-    useEffect(() => {
-        if (isScannerOpen) {
-            const scanner = new Html5Qrcode(readerId);
-            scannerRef.current = scanner;
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
-            scanner.start({ facingMode: "environment" }, config, (decodedText) => {
-                setFormData(prev => ({ ...prev, sku: decodedText }));
-                setIsScannerOpen(false);
-            }, () => {}).catch(err => console.error("Unable to start scanning.", err));
+    
+    // SPEED-UP: Removed the complex useEffect and refs for the old scanner.
+    
+    // SPEED-UP: New handler for the fast scanner component.
+    type ScanResult = { rawValue: string };
+    const handleModalScan = useCallback((result: ScanResult[]) => {
+        if (result && result[0]) {
+            setFormData(prev => ({ ...prev, sku: result[0].rawValue }));
+            setIsScannerOpen(false); // Automatically close scanner on successful scan
         }
-
-        return () => {
-            if (scannerRef.current?.isScanning) {
-                scannerRef.current.stop().catch(err => console.error("Failed to stop scanner.", err));
-            }
-        };
-    }, [isScannerOpen]);
+    }, []);
 
     const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
         const { name, value, type } = e.target;
@@ -881,9 +870,17 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
                 </div>
 
                 <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+                    {/* SPEED-UP: Replaced the old scanner logic with the new component */}
                     {isScannerOpen ? (
                         <div className="space-y-4">
-                            <div id={readerId} className="w-full rounded-xl overflow-hidden border-2 border-gray-200" />
+                            <div className="w-full rounded-xl overflow-hidden border-2 border-gray-200 aspect-square">
+                                <Scanner
+                                    onScan={handleModalScan as any} // Using 'as any' to match types easily
+                                    constraints={{ facingMode: "environment" }}
+                                    scanDelay={300}
+                                    styles={{ container: { width: '100%', height: '100%' } }}
+                                />
+                            </div>
                             <button onClick={() => setIsScannerOpen(false)} className="w-full px-4 py-2.5 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 font-medium transition-colors">Cancel Scan</button>
                         </div>
                     ) : (
@@ -960,7 +957,7 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
 };
 
 
-// --- MAIN INVENTORY COMPONENT ---
+// --- MAIN INVENTORY COMPONENT (With Virtualization and Optimistic UI) ---
 const Inventory: FC = () => {
     const { status: sessionStatus } = useSession();
     const [products, setProducts] = useState<Product[]>([]);
@@ -970,7 +967,6 @@ const Inventory: FC = () => {
     const [swipedProductId, setSwipedProductId] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState<string>("");
 
-    // OPTIMIZATION: Memoize the search results to prevent re-filtering on every render.
     const filteredProducts = useMemo(() => {
         if (!searchQuery) return products;
         const lowercasedQuery = searchQuery.toLowerCase();
@@ -980,14 +976,12 @@ const Inventory: FC = () => {
         );
     }, [products, searchQuery]);
     
-    // OPTIMIZATION: Setup for virtualized list
     const parentRef = useRef<HTMLDivElement>(null);
     const rowVirtualizer = useVirtualizer({
         count: filteredProducts.length,
         getScrollElement: () => parentRef.current,
-        // Estimate the height of each card for the virtualizer to work
-        estimateSize: () => 104, // 92px card height + 12px space-y-3 = 104
-        overscan: 5, // Render 5 extra items above and below the viewport for smoother scrolling
+        estimateSize: () => 104,
+        overscan: 5,
     });
 
     useEffect(() => {
@@ -996,9 +990,7 @@ const Inventory: FC = () => {
                 setFetchStatus('loading');
                 try {
                     const response = await fetch('/api/products');
-                    if (!response.ok) {
-                        throw new Error('Failed to fetch products');
-                    }
+                    if (!response.ok) throw new Error('Failed to fetch products');
                     const data = await response.json();
                     setProducts(Array.isArray(data) ? data : []);
                     setFetchStatus('succeeded');
@@ -1015,12 +1007,50 @@ const Inventory: FC = () => {
     }, [sessionStatus]);
 
     const handleExcelUpload = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
-        // ... (function logic is complex and already efficient, keeping it as is)
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async (event: ProgressEvent<FileReader>) => {
+            if (!event.target?.result) return;
+            try {
+                const data = new Uint8Array(event.target.result as ArrayBuffer);
+                const workbook = XLSX.read(data, { type: "array" });
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+                const rows: ExcelRow[] = XLSX.utils.sheet_to_json(sheet);
+
+                const uploadedProducts = rows.map((row) => ({
+                    sku: String(row["Product ID"] || ""),
+                    name: String(row["Product Name"] || ""),
+                    quantity: Number(row["Quantity"]) || 0,
+                    buyingPrice: Number(row["Buying Price"]) || 0,
+                    sellingPrice: Number(row["Selling Price"]) || 0,
+                    gstRate: Number(row["GST Rate"]) || 0,
+                }));
+
+                const response = await fetch('/api/products', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(uploadedProducts),
+                });
+
+                if (!response.ok) throw new Error('Failed to upload products');
+                
+                const allProducts: Product[] = await response.json();
+                
+                if (Array.isArray(allProducts)) {
+                    setProducts(allProducts);
+                    alert('Products uploaded successfully!');
+                }
+            } catch (err: unknown) {
+                alert(`An error occurred: ${err instanceof Error ? err.message : 'Unknown error'}`);
+            }
+        };
+        reader.readAsArrayBuffer(file);
     }, []);
 
     const handleSaveProduct = useCallback(async (productData: ProductFormData, imageFile: File | null) => {
         const isEditing = !!productData.id;
-        // OPTIMIZATION: Create an optimistic version of the product for instant UI update
         const optimisticProduct: Product = {
             id: isEditing ? productData.id! : `optimistic-${Date.now()}`,
             image: imageFile ? URL.createObjectURL(imageFile) : productData.image,
@@ -1059,33 +1089,25 @@ const Inventory: FC = () => {
             if (!response.ok) throw new Error(`Failed to ${isEditing ? 'update' : 'create'} product`);
             
             const savedProduct = await response.json();
-            
-            // Final state update with real data from the server
             setProducts(prev => prev.map(p => p.id === optimisticProduct.id ? savedProduct : p));
 
         } catch (err: unknown) {
             alert(`Error: ${err instanceof Error ? err.message : 'Could not save product'}`);
-            // If the API call fails, revert to the previous state
             setProducts(previousProducts);
         }
     }, [products]);
 
     const handleDeleteProduct = useCallback(async (id: string) => {
         if (!window.confirm('Are you sure you want to delete this product?')) return;
-
         const previousProducts = products;
-        // OPTIMIZATION: Optimistic UI update - remove from list immediately
         setProducts(prev => prev.filter(p => p.id !== id));
         setSwipedProductId(null);
         
         try {
             const response = await fetch(`/api/products/${id}`, { method: 'DELETE' });
-            if (response.status !== 204) {
-                throw new Error('Failed to delete product on the server.');
-            }
+            if (response.status !== 204) throw new Error('Failed to delete product on the server.');
         } catch (err: unknown) {
             alert(`Error: ${err instanceof Error ? err.message : 'Could not delete product'}`);
-            // If the API call fails, revert to the previous state
             setProducts(previousProducts);
         }
     }, [products]);
@@ -1094,18 +1116,22 @@ const Inventory: FC = () => {
         if (sessionStatus === 'loading' || fetchStatus === 'loading') {
             return <div className="flex justify-center items-center h-64"><Loader2 className="w-8 h-8 animate-spin text-indigo-600" /> <span className="ml-2">Loading Products...</span></div>;
         }
-        if (sessionStatus === 'unauthenticated' || fetchStatus === 'failed' || products.length === 0 || filteredProducts.length === 0) {
-            // ... (empty/error states remain the same)
-            if (fetchStatus === 'failed') return <div className="flex flex-col items-center justify-center h-64 bg-red-50 text-red-700 rounded-lg p-4"><Info className="w-8 h-8 mb-2" /><strong>Error:</strong> {error}</div>;
-            if (products.length === 0) return <div className="text-center h-64 flex flex-col justify-center items-center bg-gray-50 rounded-lg"><Info className="w-8 h-8 mb-2 text-gray-400" /> <h3 className="font-semibold">No Products Found</h3><p className="text-gray-500">Click &quot;Add Product&quot; to get started.</p></div>
-            if (filteredProducts.length === 0) return <div className="text-center h-64 flex flex-col justify-center items-center bg-gray-50 rounded-lg"><Search className="w-8 h-8 mb-2 text-gray-400" /> <h3 className="font-semibold">No Matching Products</h3><p className="text-gray-500">Try a different search query.</p></div>
+        if (sessionStatus === 'unauthenticated') {
+            return <div className="text-center h-64 flex flex-col justify-center items-center bg-gray-50 rounded-lg"><Info className="w-8 h-8 mb-2 text-gray-400" /> <h3 className="font-semibold">Please Log In</h3><p className="text-gray-500">Log in to manage your inventory.</p></div>
+        }
+        if (fetchStatus === 'failed') {
+            return <div className="flex flex-col items-center justify-center h-64 bg-red-50 text-red-700 rounded-lg p-4"><Info className="w-8 h-8 mb-2" /><strong>Error:</strong> {error}</div>;
+        }
+        if (products.length === 0) {
+            return <div className="text-center h-64 flex flex-col justify-center items-center bg-gray-50 rounded-lg"><Info className="w-8 h-8 mb-2 text-gray-400" /> <h3 className="font-semibold">No Products Found</h3><p className="text-gray-500">Click &quot;Add Product&quot; to get started.</p></div>
+        }
+        if (filteredProducts.length === 0) {
+            return <div className="text-center h-64 flex flex-col justify-center items-center bg-gray-50 rounded-lg"><Search className="w-8 h-8 mb-2 text-gray-400" /> <h3 className="font-semibold">No Matching Products</h3><p className="text-gray-500">Try a different search query.</p></div>
         }
 
         return (
             <>
                 <DesktopProductTable products={filteredProducts} onEdit={(p) => setModalState({ isOpen: true, product: p })} onDelete={handleDeleteProduct} />
-                
-                {/* OPTIMIZATION: This is the virtualized list for mobile */}
                 <div ref={parentRef} className="md:hidden pb-20 h-[calc(100vh-200px)] overflow-y-auto">
                     <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
                         {rowVirtualizer.getVirtualItems().map(virtualItem => {
@@ -1114,13 +1140,9 @@ const Inventory: FC = () => {
                                 <div
                                     key={virtualItem.key}
                                     style={{
-                                        position: 'absolute',
-                                        top: 0,
-                                        left: 0,
-                                        width: '100%',
-                                        height: `${virtualItem.size}px`,
-                                        transform: `translateY(${virtualItem.start}px)`,
-                                        padding: '6px 0', // Half of the space-y-3
+                                        position: 'absolute', top: 0, left: 0, width: '100%',
+                                        height: `${virtualItem.size}px`, transform: `translateY(${virtualItem.start}px)`,
+                                        padding: '6px 0',
                                     }}
                                 >
                                     <MobileProductCard
