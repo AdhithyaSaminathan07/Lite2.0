@@ -658,7 +658,6 @@ interface MobileProductCardProps {
   onDelete: (id: string) => void;
 }
 
-// PERFORMANCE: Wrapped with React.memo to prevent re-renders if props don't change.
 const MobileProductCard: FC<MobileProductCardProps> = React.memo(({ product, isSwiped, onSwipe, onEdit, onDelete }) => {
   const controls = useAnimationControls();
   const ACTION_WIDTH = 160;
@@ -869,14 +868,15 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
                     {isScannerOpen ? (
                         <div className="space-y-4">
                             <div className="w-full rounded-xl overflow-hidden border-2 border-gray-200 aspect-square">
-                                {/* BUILD FIX: Wrap the scanner with disable/enable comments to fix the 'any' type error */}
-                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                {/* BUILD FIX: Using a block comment to disable the rule for the component block */}
+                                {/* eslint-disable @typescript-eslint/no-explicit-any */}
                                 <Scanner
                                     onScan={handleModalScan as any}
                                     constraints={{ facingMode: "environment" }}
                                     scanDelay={300}
                                     styles={{ container: { width: '100%', height: '100%' } }}
                                 />
+                                {/* eslint-enable @typescript-eslint/no-explicit-any */}
                             </div>
                             <button onClick={() => setIsScannerOpen(false)} className="w-full px-4 py-2.5 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 font-medium transition-colors">Cancel Scan</button>
                         </div>
