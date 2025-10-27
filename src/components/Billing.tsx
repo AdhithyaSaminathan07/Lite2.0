@@ -477,7 +477,8 @@
 //   const [productName, setProductName] = useState('');
 //   const [productPrice, setProductPrice] = useState<number | ''>('');
 //   const [scanning, setScanning] = useState(false);
-//   const [flashOn, setFlashOn] = useState(false);
+//   // FIX: Removed the flashOn state as it's no longer needed
+//   // const [flashOn, setFlashOn] = useState(false); 
 //   const [inventory, setInventory] = useState<InventoryProduct[]>([]);
 //   const [suggestions, setSuggestions] = useState<InventoryProduct[]>([]);
 //   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -555,7 +556,6 @@
 //   const handleScan = useCallback((results: IDetectedBarcode[]) => {
 //     if (results && results[0]) {
 //       const scannedValue = results[0].rawValue;
-//       // We keep the scanner open, so we remove setScanning(false)
 //       const foundProduct = inventory.find(p => p.id === scannedValue || p.sku?.toLowerCase() === scannedValue.toLowerCase() || p.name.toLowerCase() === scannedValue.toLowerCase());
 //       if (foundProduct) {
 //         addToCart(foundProduct.name, foundProduct.sellingPrice, foundProduct.id);
@@ -660,22 +660,15 @@
 //         <main className="flex-1 overflow-y-auto p-4 space-y-3">
 //           {scanning && (
 //             <div className="bg-white rounded-xl p-3 shadow-sm mb-4">
-//               {/* FIX: Reduced max-width for a more compact scanner section */}
 //               <div className="max-w-xs mx-auto"> 
 //                 <Scanner
 //                   constraints={{ facingMode: 'environment' }}
 //                   onScan={handleScan}
-//                   scanDelay={300} // Slightly increased delay to prevent multiple scans of the same item
-//                   // The 'torch' prop is not in the library's official types, so we must disable the eslint rule for this line.
-//                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-//                   {...({ torch: flashOn } as any)}
-//                   // FIX: Added a fixed height to make the scanner view smaller
+//                   scanDelay={300}
+//                   // FIX: Removed the torch prop as the flash button is gone
 //                   styles={{ container: { width: '100%', height: 160, borderRadius: '8px', overflow: 'hidden' } }}
 //                 />
-//                 <button onClick={() => setFlashOn(f => !f)} className="mt-2 flex items-center justify-center gap-2 w-full rounded-md bg-[#5a4fcf] py-2 text-white font-medium hover:bg-[#4c42b8]">
-//                   <Sun size={16} />
-//                   <span>{flashOn ? 'Flash On' : 'Flash Off'}</span>
-//                 </button>
+//                 {/* FIX: Removed the flash toggle button */}
 //               </div>
 //             </div>
 //           )}
@@ -710,7 +703,7 @@
 //                   ) : (
 //                     <>
 //                       <p className="font-semibold w-2/4 truncate">{item.name}</p>
-//                       <p className="text-sm text-gray-600 w-1/4">Qty: {item.quantity}</p>
+//                       <p className="text-sm text-gray-600 w-1/t4">Qty: {item.quantity}</p>
 //                       <p className="text-sm font-semibold text-gray-800 w-1/4">₹{(item.price * item.quantity).toFixed(2)}</p>
 //                     </>
 //                   )}
@@ -890,10 +883,9 @@ export default function BillingPage() {
   const { data: session, status } = useSession();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [productName, setProductName] = useState('');
-  const [productPrice, setProductPrice] = useState<number | ''>('');
+  // FIX: Removed the productPrice state
+  // const [productPrice, setProductPrice] = useState<number | ''>(''); 
   const [scanning, setScanning] = useState(false);
-  // FIX: Removed the flashOn state as it's no longer needed
-  // const [flashOn, setFlashOn] = useState(false); 
   const [inventory, setInventory] = useState<InventoryProduct[]>([]);
   const [suggestions, setSuggestions] = useState<InventoryProduct[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -954,17 +946,18 @@ export default function BillingPage() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const addToCart = useCallback((name: string, price: number, productId?: string) => {
+  // FIX: Added 'isEditing' parameter to allow forcing edit mode on add
+  const addToCart = useCallback((name: string, price: number, productId?: string, isEditing = false) => {
     if (!name || price < 0) return;
     setCart(prev => {
       const existingItem = productId ? prev.find(item => item.productId === productId) : null;
       if (existingItem) {
         return prev.map(item => item.productId === productId ? { ...item, quantity: item.quantity + 1 } : item);
       }
-      return [{ id: Date.now(), productId, name, quantity: 1, price, isEditing: false }, ...prev];
+      return [{ id: Date.now(), productId, name, quantity: 1, price, isEditing }, ...prev];
     });
     setProductName('');
-    setProductPrice('');
+    // setProductPrice(''); // No longer needed
     setShowSuggestions(false);
   }, []);
 
@@ -975,20 +968,22 @@ export default function BillingPage() {
       if (foundProduct) {
         addToCart(foundProduct.name, foundProduct.sellingPrice, foundProduct.id);
       } else {
-        addToCart(scannedValue, 0);
+        // When scanning an unknown item, add it and put it in edit mode to set the price
+        addToCart(scannedValue, 0, undefined, true);
       }
     }
   }, [inventory, addToCart]);
-
+  
+  // FIX: Simplified manual add logic
   const handleManualAdd = useCallback(() => {
-    const price = Number(productPrice);
-    if (!productName.trim() || price <= 0) {
-      setModal({ isOpen: true, title: 'Invalid Input', message: 'Please enter a valid name and a price greater than zero.', showCancel: false, confirmText: 'OK', onConfirm: undefined });
+    const name = productName.trim();
+    if (!name) {
+      setModal({ isOpen: true, title: 'Item Name Required', message: 'Please enter a name for the custom item.', showCancel: false, confirmText: 'OK' });
       return;
     }
-    const matchedItem = inventory.find(p => p.name.toLowerCase() === productName.trim().toLowerCase());
-    addToCart(matchedItem?.name || productName.trim(), matchedItem?.sellingPrice || price, matchedItem?.id);
-  }, [productName, productPrice, inventory, addToCart]);
+    // Add as a new item with price 0 and automatically enable editing
+    addToCart(name, 0, undefined, true);
+  }, [productName, addToCart]);
 
   const deleteCartItem = (id: number) => setCart(prev => prev.filter(item => item.id !== id));
   const toggleEdit = (id: number) => setCart(prev => prev.map(item => item.id === id ? { ...item, isEditing: !item.isEditing } : { ...item, isEditing: false }));
@@ -1080,31 +1075,36 @@ export default function BillingPage() {
                   constraints={{ facingMode: 'environment' }}
                   onScan={handleScan}
                   scanDelay={300}
-                  // FIX: Removed the torch prop as the flash button is gone
                   styles={{ container: { width: '100%', height: 160, borderRadius: '8px', overflow: 'hidden' } }}
                 />
-                {/* FIX: Removed the flash toggle button */}
               </div>
             </div>
           )}
 
-          <div ref={suggestionsRef} className="relative">
-            <input type="text" placeholder="Search by name or ID..." className="w-full rounded-xl border p-3 shadow-sm focus:ring-2 focus:ring-[#5a4fcf] outline-none" value={productName} onChange={(e) => setProductName(e.target.value)} />
-            {showSuggestions && (
-              <div className="absolute z-10 mt-1 w-full rounded-xl border bg-white shadow-lg">
-                {suggestions.map((s) => (
-                  <div key={s.id} onClick={() => addToCart(s.name, s.sellingPrice, s.id)} className="cursor-pointer border-b p-3 hover:bg-[#f1f0ff]">
-                    <div className="flex justify-between font-semibold text-gray-800"><span>{s.name}</span><span>₹{s.sellingPrice.toFixed(2)}</span></div>
-                    {s.sku && <p className="text-xs text-gray-500">ID: {s.sku}</p>}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* FIX: New combined layout for search and add button */}
           <div className="flex gap-2">
-            <input type="number" placeholder="Price" className="w-1/3 rounded-lg border p-3 focus:ring-2 focus:ring-[#5a4fcf]" value={productPrice} onChange={(e) => setProductPrice(e.target.value === '' ? '' : parseFloat(e.target.value))} />
-            <button onClick={handleManualAdd} className="flex-1 rounded-lg bg-[#5a4fcf] text-white font-semibold hover:bg-[#4c42b8]">Add Custom Item</button>
+            <div ref={suggestionsRef} className="relative flex-grow">
+              <input 
+                type="text" 
+                placeholder="Search by name or add custom item..." 
+                className="w-full rounded-xl border p-3 shadow-sm focus:ring-2 focus:ring-[#5a4fcf] outline-none" 
+                value={productName} 
+                onChange={(e) => setProductName(e.target.value)} 
+              />
+              {showSuggestions && (
+                <div className="absolute z-10 mt-1 w-full rounded-xl border bg-white shadow-lg">
+                  {suggestions.map((s) => (
+                    <div key={s.id} onClick={() => addToCart(s.name, s.sellingPrice, s.id)} className="cursor-pointer border-b p-3 hover:bg-[#f1f0ff]">
+                      <div className="flex justify-between font-semibold text-gray-800"><span>{s.name}</span><span>₹{s.sellingPrice.toFixed(2)}</span></div>
+                      {s.sku && <p className="text-xs text-gray-500">ID: {s.sku}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button onClick={handleManualAdd} className="flex-shrink-0 rounded-lg bg-[#5a4fcf] text-white font-semibold px-5 py-3 hover:bg-[#4c42b8]">Add</button>
           </div>
+          
           <div className="space-y-2">
             {cart.length === 0 ? <p className="text-center text-gray-500 mt-8">🛒 Your cart is empty.</p> : cart.map((item) => (
               <div key={item.id} className="flex justify-between items-center bg-white rounded-xl p-3 shadow-sm">
@@ -1118,7 +1118,7 @@ export default function BillingPage() {
                   ) : (
                     <>
                       <p className="font-semibold w-2/4 truncate">{item.name}</p>
-                      <p className="text-sm text-gray-600 w-1/t4">Qty: {item.quantity}</p>
+                      <p className="text-sm text-gray-600 w-1/4">Qty: {item.quantity}</p>
                       <p className="text-sm font-semibold text-gray-800 w-1/4">₹{(item.price * item.quantity).toFixed(2)}</p>
                     </>
                   )}
