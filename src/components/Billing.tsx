@@ -552,11 +552,10 @@ export default function BillingPage() {
     setShowSuggestions(false);
   }, []);
 
-  // FIX 2: Use the corrected 'IDetectedBarcode' type for the function argument
   const handleScan = useCallback((results: IDetectedBarcode[]) => {
     if (results && results[0]) {
       const scannedValue = results[0].rawValue;
-      setScanning(false);
+      // We keep the scanner open, so we remove setScanning(false)
       const foundProduct = inventory.find(p => p.id === scannedValue || p.sku?.toLowerCase() === scannedValue.toLowerCase() || p.name.toLowerCase() === scannedValue.toLowerCase());
       if (foundProduct) {
         addToCart(foundProduct.name, foundProduct.sellingPrice, foundProduct.id);
@@ -649,7 +648,6 @@ export default function BillingPage() {
           <h1 className="text-xl font-bold text-[#5a4fcf]">Billzzy Billing</h1>
           <div className="flex items-center gap-4">
             <button onClick={handleStartNewBill} disabled={cart.length === 0} className="p-2 text-gray-500 rounded-full hover:bg-gray-200 disabled:text-gray-300" title="Start New Bill"><RefreshCw size={20} /></button>
-            {/* FIX: This button now toggles the scanner's visibility and changes its text */}
             <button
               onClick={() => setScanning(s => !s)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white font-semibold shadow transition-colors ${scanning ? 'bg-red-500 hover:bg-red-600' : 'bg-[#5a4fcf] hover:bg-[#4c42b8]'}`}
@@ -660,18 +658,19 @@ export default function BillingPage() {
           </div>
         </header>
         <main className="flex-1 overflow-y-auto p-4 space-y-3">
-          {/* FIX: The scanner is now rendered inline here instead of as a modal */}
           {scanning && (
             <div className="bg-white rounded-xl p-3 shadow-sm mb-4">
-              <div className="max-w-sm mx-auto">
+              {/* FIX: Reduced max-width for a more compact scanner section */}
+              <div className="max-w-xs mx-auto"> 
                 <Scanner
                   constraints={{ facingMode: 'environment' }}
                   onScan={handleScan}
-                  scanDelay={200}
+                  scanDelay={300} // Slightly increased delay to prevent multiple scans of the same item
                   // The 'torch' prop is not in the library's official types, so we must disable the eslint rule for this line.
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   {...({ torch: flashOn } as any)}
-                  styles={{ container: { width: '100%', borderRadius: '8px', overflow: 'hidden' } }}
+                  // FIX: Added a fixed height to make the scanner view smaller
+                  styles={{ container: { width: '100%', height: 160, borderRadius: '8px', overflow: 'hidden' } }}
                 />
                 <button onClick={() => setFlashOn(f => !f)} className="mt-2 flex items-center justify-center gap-2 w-full rounded-md bg-[#5a4fcf] py-2 text-white font-medium hover:bg-[#4c42b8]">
                   <Sun size={16} />
@@ -816,9 +815,6 @@ export default function BillingPage() {
           </div>
         </footer>
       </div>
-      
-      {/* FIX: The scanner modal has been removed from here */}
-
       <Modal isOpen={modal.isOpen} onClose={() => setModal({ ...modal, isOpen: false, message: '' })} title={modal.title} onConfirm={modal.onConfirm} confirmText={modal.confirmText} showCancel={modal.showCancel}>{modal.message}</Modal>
     </>
   );
