@@ -665,17 +665,15 @@ export default function BillingPage() {
                 <Scanner
                   constraints={{ facingMode: 'environment' }}
                   onScan={handleScan}
-                  scanDelay={300} // Slightly increased delay to prevent multiple scans of the same item
-                  // The 'torch' prop is not in the library's official types, so we must disable the eslint rule for this line.
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  scanDelay={300} 
                   {...({ torch: flashOn } as any)}
                   // FIX: Added a fixed height to make the scanner view smaller
                   styles={{ container: { width: '100%', height: 160, borderRadius: '8px', overflow: 'hidden' } }}
                 />
-                <button onClick={() => setFlashOn(f => !f)} className="mt-2 flex items-center justify-center gap-2 w-full rounded-md bg-[#5a4fcf] py-2 text-white font-medium hover:bg-[#4c42b8]">
+                {/* <button onClick={() => setFlashOn(f => !f)} className="mt-2 flex items-center justify-center gap-2 w-full rounded-md bg-[#5a4fcf] py-2 text-white font-medium hover:bg-[#4c42b8]">
                   <Sun size={16} />
                   <span>{flashOn ? 'Flash On' : 'Flash Off'}</span>
-                </button>
+                </button> */}
               </div>
             </div>
           )}
