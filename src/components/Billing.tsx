@@ -822,31 +822,20 @@
 //   const [inventory, setInventory] = useState<InventoryProduct[]>([]);
 //   const [suggestions, setSuggestions] = useState<InventoryProduct[]>([]);
 //   const [showSuggestions, setShowSuggestions] = useState(false);
-
-//   // State to control visibility of WhatsApp input
 //   const [showWhatsAppSharePanel, setShowWhatsAppSharePanel] = useState(false);
-//   // State to control visibility of payment options
 //   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
-
 //   const [selectedPayment, setSelectedPayment] = useState<string>('');
 //   const [merchantUpi, setMerchantUpi] = useState('');
 //   const [whatsAppNumber, setWhatsAppNumber] = useState('');
-
-//   // Cash payment states
 //   const [amountGiven, setAmountGiven] = useState<number | ''>('');
-
 //   const [modal, setModal] = useState<{ isOpen: boolean; title: string; message: string | React.ReactNode; onConfirm?: (() => void); confirmText: string; showCancel: boolean; }>({ isOpen: false, title: '', message: '', confirmText: 'OK', showCancel: false });
-
 //   const suggestionsRef = useRef<HTMLDivElement | null>(null);
-
 //   const totalAmount = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
-
 //   const balance = useMemo(() => {
 //     const total = totalAmount;
 //     const given = Number(amountGiven);
 //     return given > 0 ? given - total : 0;
 //   }, [totalAmount, amountGiven]);
-
 //   const merchantName = session?.user?.name || "Billzzy Lite";
 //   const upiQR = merchantUpi ? `upi://pay?pa=${merchantUpi}&pn=${encodeURIComponent(merchantName)}&am=${totalAmount.toFixed(2)}&cu=INR&tn=Bill%20Payment` : '';
 
@@ -927,8 +916,6 @@
 //     addToCart(matchedItem?.name || productName.trim(), matchedItem?.sellingPrice || price, matchedItem?.id);
 //   }, [productName, productPrice, inventory, addToCart]);
 
-
-
 //   const deleteCartItem = (id: number) => setCart(prev => prev.filter(item => item.id !== id));
 //   const toggleEdit = (id: number) => setCart(prev => prev.map(item => item.id === id ? { ...item, isEditing: !item.isEditing } : { ...item, isEditing: false }));
 //   const updateCartItem = (id: number, updatedValues: Partial<CartItem>) => setCart(prev => prev.map(item => item.id === id ? { ...item, ...updatedValues } : item));
@@ -936,11 +923,11 @@
 //   const handleTransactionDone = useCallback(() => {
 //     setCart([]);
 //     setSelectedPayment('');
-//     setShowWhatsAppSharePanel(false); // Reset WhatsApp panel
-//     setShowPaymentOptions(false); // Reset payment panel
-//     setWhatsAppNumber(''); // Clear WhatsApp number
-//     setAmountGiven(''); // Clear amount given
-//     setModal({ ...modal, isOpen: false }); // Close any open modal
+//     setShowWhatsAppSharePanel(false);
+//     setShowPaymentOptions(false);
+//     setWhatsAppNumber('');
+//     setAmountGiven('');
+//     setModal({ ...modal, isOpen: false });
 //   }, [modal]);
 
 //   const handleProceedToPayment = useCallback(() => {
@@ -948,14 +935,11 @@
 //       setModal({ isOpen: true, title: 'Invalid Number', message: 'The number you entered is not valid. Please correct it or leave it blank.', confirmText: 'OK', onConfirm: undefined, showCancel: false });
 //       return;
 //     }
-    
 //     setShowWhatsAppSharePanel(false);
 //     setShowPaymentOptions(true);
 //   }, [whatsAppNumber]);
 
-
 //   const handlePaymentSuccess = useCallback(async () => {
-//     // 1. Update inventory
 //     const updatePromises = cart.filter(item => item.productId).map(item => fetch(`/api/products/${item.productId}`, {
 //       method: 'PUT',
 //       headers: { 'Content-Type': 'application/json' },
@@ -963,16 +947,27 @@
 //     }));
 //     await Promise.all(updatePromises).catch(err => console.error("Inventory update failed:", err));
 
-//     // 2. Save sale
 //     try {
-//       await fetch('/api/sales', {
+//       const response = await fetch('/api/sales', {
 //         method: 'POST',
 //         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify({ amount: totalAmount, paymentMethod: selectedPayment.toLowerCase() }),
+//         body: JSON.stringify({ amount: totalAmount, paymentMethod: selectedPayment }),
 //       });
-//     } catch (error) { console.error("Failed to save sale:", error); }
 
-//     // 3. Show simple success modal and clear bill
+//       if (!response.ok) {
+//         // If the server returns a 4xx or 5xx error, handle it here
+//         const errorData = await response.json();
+//         console.error("Failed to create sale:", errorData);
+//         setModal({ isOpen: true, title: 'Error', message: `Could not save the sale. Server responded: ${errorData.message}`, confirmText: 'OK', showCancel: false });
+//         return; // Stop the function here
+//       }
+
+//     } catch (error) {
+//       console.error("Network error when saving sale:", error);
+//       setModal({ isOpen: true, title: 'Network Error', message: 'Could not connect to the server to save the sale.', confirmText: 'OK', showCancel: false });
+//       return; // Stop the function here
+//     }
+
 //     setModal({
 //       isOpen: true,
 //       title: 'Success!',
@@ -983,14 +978,11 @@
 //     });
 //   }, [selectedPayment, totalAmount, cart, handleTransactionDone]);
 
-
 //   const handleStartNewBill = useCallback(() => {
 //     if (cart.length === 0) return;
 //     setModal({ isOpen: true, title: 'Clear Bill?', message: 'This will clear all items from the current bill. Are you sure?', showCancel: true, confirmText: 'Yes, Clear', onConfirm: () => setCart([]) });
 //   }, [cart.length]);
 
-
-//   // --- RENDER ---
 //   return (
 //     <>
 //       <div className="flex flex-col h-screen bg-[#f9f9fb] font-sans">
@@ -1049,9 +1041,7 @@
 //         </main>
 //         <footer className="bg-white p-4 shadow-[0_-2px_5px_rgba(0,0,0,0.05)] border-t space-y-4">
 //           <div className="flex justify-between items-center"><span className="text-lg font-medium">Grand Total</span><span className="text-2xl font-bold text-[#5a4fcf]">₹{totalAmount.toFixed(2)}</span></div>
-
 //           <div className="space-y-3 border-t pt-4">
-//             {/* Single Finalize & Pay Button appears initially */}
 //             {!showWhatsAppSharePanel && !showPaymentOptions && (
 //               <button
 //                 onClick={() => {
@@ -1068,8 +1058,6 @@
 //                 <CreditCard size={16} /><span>Finalize & Pay</span>
 //               </button>
 //             )}
-
-//             {/* WhatsApp Share UI */}
 //             {showWhatsAppSharePanel && cart.length > 0 && (
 //                 <div className="space-y-3 rounded-lg bg-gray-50 p-3 pt-2">
 //                     <div className="flex gap-2 items-center">
@@ -1096,14 +1084,21 @@
 //                     </button>
 //                 </div>
 //             )}
-
-//             {/* Payment Options */}
 //             {showPaymentOptions && cart.length > 0 && (
 //               <div className="space-y-3 border-t pt-4">
-//                 <div className="flex flex-wrap gap-2">{['Cash', 'QR Code', 'Card'].map(m => <button key={m} onClick={() => setSelectedPayment(m)} className={`rounded-lg px-4 py-2 text-sm font-semibold ${selectedPayment === m ? 'bg-[#5a4fcf] text-white' : 'bg-gray-200 text-gray-700'}`}>{m}</button>)}</div>
+//                 <div className="flex flex-wrap gap-2">
+//                   {['cash', 'qr-code', 'card'].map(method => (
+//                     <button 
+//                       key={method} 
+//                       onClick={() => setSelectedPayment(method)} 
+//                       className={`rounded-lg px-4 py-2 text-sm font-semibold capitalize ${selectedPayment === method ? 'bg-[#5a4fcf] text-white' : 'bg-gray-200 text-gray-700'}`}
+//                     >
+//                       {method.replace('-', ' ')}
+//                     </button>
+//                   ))}
+//                 </div>
                 
-//                 {/* --- MODIFIED CASH SECTION --- */}
-//                 {selectedPayment === 'Cash' && (
+//                 {selectedPayment === 'cash' && (
 //                   <div className="rounded-lg bg-gray-50 p-3 space-y-2">
 //                     <p className="text-sm text-center">Confirm receipt of <b>₹{totalAmount.toFixed(2)}</b> cash.</p>
 //                     <div className="flex items-center gap-2">
@@ -1125,10 +1120,10 @@
 //                     <button onClick={handlePaymentSuccess} className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#5a4fcf] p-2.5 font-bold text-white"><DollarSign size={18} />Confirm Cash Payment</button>
 //                   </div>
 //                 )}
-//                 {/* --- END MODIFIED CASH SECTION --- */}
 
-//                 {selectedPayment === 'QR Code' && <div className="rounded-lg bg-gray-50 p-4 text-center">{upiQR ? (<><div className="mx-auto max-w-[180px]"><QRCode value={upiQR} style={{ height: 'auto', width: '100%' }} /></div><p className="text-sm">Scan to pay <b>{merchantUpi}</b></p><button onClick={handlePaymentSuccess} className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg bg-green-600 p-3 font-bold text-white"><CheckCircle size={20} />Confirm Payment Received</button></>) : <p className="font-semibold text-red-600">UPI ID not configured.</p>}</div>}
-//                 {selectedPayment === 'Card' && <div className="rounded-lg bg-gray-50 p-4 text-center"><p className="text-sm">Confirm card transaction was successful.</p><button onClick={handlePaymentSuccess} className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg bg-purple-600 p-3 font-bold text-white"><CreditCard size={20} />Confirm Card Payment</button></div>}
+//                 {selectedPayment === 'qr-code' && <div className="rounded-lg bg-gray-50 p-4 text-center">{upiQR ? (<><div className="mx-auto max-w-[180px]"><QRCode value={upiQR} style={{ height: 'auto', width: '100%' }} /></div><p className="mt-2 text-sm">Scan to pay <b>{merchantUpi}</b></p><button onClick={handlePaymentSuccess} className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg bg-green-600 p-3 font-bold text-white"><CheckCircle size={20} />Confirm Payment Received</button></>) : <p className="font-semibold text-red-600">UPI ID not configured.</p>}</div>}
+                
+//                 {selectedPayment === 'card' && <div className="rounded-lg bg-gray-50 p-4 text-center"><p className="text-sm">Confirm card transaction was successful.</p><button onClick={handlePaymentSuccess} className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg bg-purple-600 p-3 font-bold text-white"><CreditCard size={20} />Confirm Card Payment</button></div>}
 //               </div>
 //             )}
 //           </div>
@@ -1138,7 +1133,6 @@
 //         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80">
 //           <div className="w-72 rounded-xl bg-white p-3 relative shadow-lg">
 //             <div className="flex justify-between items-center mb-2"><h3 className="font-semibold text-[#5a4fcf] text-sm">Scan Barcode / QR</h3><button onClick={() => setScanning(false)} className="text-gray-500 hover:text-gray-700"><X size={20} /></button></div>
-//             {/* eslint-disable @typescript-eslint/no-explicit-any */}
 //             <Scanner
 //                 constraints={{ facingMode: 'environment' }}
 //                 onScan={handleScan as any}
@@ -1146,7 +1140,6 @@
 //                 {...({ torch: flashOn } as any)}
 //                 styles={{ container: { width: '100%', height: 220, position: 'relative', borderRadius: '8px', overflow: 'hidden' } }}
 //             />
-//             {/* eslint-enable @typescript-eslint/no-explicit-any */}
 //             <button onClick={() => setFlashOn(f => !f)} className="mt-2 flex items-center justify-center gap-2 w-full rounded-md bg-[#5a4fcf] py-2 text-white font-medium hover:bg-[#4c42b8]"><Sun size={16} /><span>{flashOn ? 'Flash On' : 'Flash Off'}</span></button>
 //           </div>
 //         </div>
@@ -1156,12 +1149,12 @@
 //   );
 // }
 
-
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
-import { Scanner } from '@yudiel/react-qr-scanner';
+// FIX 1: Correct the import from 'DetectedBarcode' to 'IDetectedBarcode'
+import { Scanner, IDetectedBarcode } from '@yudiel/react-qr-scanner';
 import QRCode from 'react-qr-code';
 import {
   Scan, Trash2, Edit2, Check, X, Sun, AlertTriangle, Send,
@@ -1187,12 +1180,7 @@ type InventoryProduct = {
   sku?: string;
 };
 
-// A minimal local type for the scanner result to avoid using 'any'
-type ScanResult = {
-    rawValue: string;
-};
-
-// --- MODAL COMPONENT ---
+// --- MODAL COMPONENT (No changes needed) ---
 type ModalProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -1308,7 +1296,8 @@ export default function BillingPage() {
     setShowSuggestions(false);
   }, []);
 
-  const handleScan = useCallback((results: ScanResult[]) => {
+  // FIX 2: Use the corrected 'IDetectedBarcode' type for the function argument
+  const handleScan = useCallback((results: IDetectedBarcode[]) => {
     if (results && results[0]) {
       const scannedValue = results[0].rawValue;
       setScanning(false);
@@ -1370,17 +1359,16 @@ export default function BillingPage() {
       });
 
       if (!response.ok) {
-        // If the server returns a 4xx or 5xx error, handle it here
         const errorData = await response.json();
         console.error("Failed to create sale:", errorData);
         setModal({ isOpen: true, title: 'Error', message: `Could not save the sale. Server responded: ${errorData.message}`, confirmText: 'OK', showCancel: false });
-        return; // Stop the function here
+        return;
       }
 
     } catch (error) {
       console.error("Network error when saving sale:", error);
       setModal({ isOpen: true, title: 'Network Error', message: 'Could not connect to the server to save the sale.', confirmText: 'OK', showCancel: false });
-      return; // Stop the function here
+      return;
     }
 
     setModal({
@@ -1548,13 +1536,17 @@ export default function BillingPage() {
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80">
           <div className="w-72 rounded-xl bg-white p-3 relative shadow-lg">
             <div className="flex justify-between items-center mb-2"><h3 className="font-semibold text-[#5a4fcf] text-sm">Scan Barcode / QR</h3><button onClick={() => setScanning(false)} className="text-gray-500 hover:text-gray-700"><X size={20} /></button></div>
+            
             <Scanner
                 constraints={{ facingMode: 'environment' }}
-                onScan={handleScan as any}
+                onScan={handleScan}
                 scanDelay={200}
+                // The 'torch' prop is not in the library's official types, so we must disable the eslint rule for this line.
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 {...({ torch: flashOn } as any)}
                 styles={{ container: { width: '100%', height: 220, position: 'relative', borderRadius: '8px', overflow: 'hidden' } }}
             />
+            
             <button onClick={() => setFlashOn(f => !f)} className="mt-2 flex items-center justify-center gap-2 w-full rounded-md bg-[#5a4fcf] py-2 text-white font-medium hover:bg-[#4c42b8]"><Sun size={16} /><span>{flashOn ? 'Flash On' : 'Flash Off'}</span></button>
           </div>
         </div>

@@ -273,7 +273,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import dbConnect from "@/lib/mongodb";
 import Sale from "@/models/Sales";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 /**
  * GET: Securely fetches sales data ONLY for the currently logged-in user.
