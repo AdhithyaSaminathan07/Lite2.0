@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@tanstack/react-virtual": "^3.13.12",
     "@yudiel/react-qr-scanner": "^2.4.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.22",
@@ -30,8 +31,8 @@
     "@tailwindcss/postcss": "^4.1.14",
     "@types/minimatch": "^5.1.2",
     "@types/node": "^20.19.19",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
     "@types/xlsx": "^0.0.35",
     "autoprefixer": "^10.4.21",
     "eslint": "^9",
