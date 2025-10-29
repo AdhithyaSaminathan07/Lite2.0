@@ -1,3 +1,5 @@
+
+
 // 'use client';
 
 // import React, { useState, useEffect, FC, ChangeEvent, useRef, useMemo, useCallback } from "react";
@@ -618,6 +620,7 @@
 
 // export default Inventory;
 
+
 // 'use client';
 
 // import React, { useState, useEffect, FC, ChangeEvent, useRef, useMemo, useCallback } from "react";
@@ -645,13 +648,9 @@
 //   lowStockThreshold?: number;
 // }
 
+// // Interface for the raw data from Excel (flexible keys)
 // interface ExcelRow {
-//   "Product ID"?: string | number;
-//   "Product Name"?: string;
-//   "Quantity"?: number;
-//   "Buying Price"?: number;
-//   "Selling Price"?: number;
-//   "GST Rate"?: number;
+//   [key: string]: any;
 // }
 
 // const formatCurrency = (amount: number): string => {
@@ -1037,9 +1036,11 @@
 //         }
 //     }, [sessionStatus]);
 
+//     // --- MODIFIED & IMPROVED: EXCEL UPLOAD HANDLER ---
 //     const handleExcelUpload = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
 //         const file = e.target.files?.[0];
 //         if (!file) return;
+
 //         const reader = new FileReader();
 //         reader.onload = async (event: ProgressEvent<FileReader>) => {
 //             if (!event.target?.result) return;
@@ -1050,35 +1051,63 @@
 //                 const sheet = workbook.Sheets[sheetName];
 //                 const rows: ExcelRow[] = XLSX.utils.sheet_to_json(sheet);
 
-//                 const uploadedProducts = rows.map((row) => ({
-//                     sku: String(row["Product ID"] || ""),
-//                     name: String(row["Product Name"] || ""),
-//                     quantity: Number(row["Quantity"]) || 0,
-//                     buyingPrice: Number(row["Buying Price"]) || 0,
-//                     sellingPrice: Number(row["Selling Price"]) || 0,
-//                     gstRate: Number(row["GST Rate"]) || 0,
-//                 }));
+//                 // --- DEBUGGING: Log raw data parsed from Excel ---
+//                 console.log("Raw data from Excel:", rows);
 
-//                 const response = await fetch('/api/products', {
+//                 // --- ROBUST PARSING: Normalize headers to be flexible ---
+//                 const getColumn = (row: ExcelRow, expectedHeaders: string[]): any => {
+//                     for (const header of expectedHeaders) {
+//                         const lowerHeader = header.toLowerCase();
+//                         for (const key in row) {
+//                             if (key.trim().toLowerCase() === lowerHeader) {
+//                                 return row[key];
+//                             }
+//                         }
+//                     }
+//                     return undefined;
+//                 };
+
+//                 const uploadedProducts = rows.map((row) => ({
+//                     sku: String(getColumn(row, ["Product ID", "SKU"]) || ""),
+//                     name: String(getColumn(row, ["Product Name", "Name"]) || ""),
+//                     quantity: Number(getColumn(row, ["Quantity", "Qty"])) || 0,
+//                     buyingPrice: Number(getColumn(row, ["Buying Price"])) || 0,
+//                     sellingPrice: Number(getColumn(row, ["Selling Price"])) || 0,
+//                     gstRate: Number(getColumn(row, ["GST Rate", "GST"])) || 0,
+//                 }));
+                
+//                 // --- DEBUGGING: Log processed data before sending to API ---
+//                 console.log("Processed products being sent to API:", uploadedProducts);
+
+//                 const response = await fetch('/api/products/batch', { // Recommended to use a specific batch endpoint
 //                     method: 'POST',
 //                     headers: { 'Content-Type': 'application/json' },
 //                     body: JSON.stringify(uploadedProducts),
 //                 });
 
-//                 if (!response.ok) throw new Error('Failed to upload products');
+//                 if (!response.ok) {
+//                     const errorData = await response.json();
+//                     throw new Error(errorData.message || 'Failed to upload products');
+//                 }
                 
 //                 const allProducts: Product[] = await response.json();
                 
 //                 if (Array.isArray(allProducts)) {
 //                     setProducts(allProducts);
-//                     alert('Products uploaded successfully!');
+//                     alert(`${uploadedProducts.length} products uploaded successfully!`);
 //                 }
 //             } catch (err: unknown) {
-//                 alert(`An error occurred: ${err instanceof Error ? err.message : 'Unknown error'}`);
+//                 const errorMessage = err instanceof Error ? err.message : 'Unknown error during upload';
+//                 console.error("Excel Upload Error:", err);
+//                 alert(`Error: ${errorMessage}`);
+//             } finally {
+//                 // Reset the file input so the user can upload the same file again if needed
+//                 e.target.value = '';
 //             }
 //         };
 //         reader.readAsArrayBuffer(file);
 //     }, []);
+
 
 //     const handleSaveProduct = useCallback(async (productData: ProductFormData, imageFile: File | null) => {
 //         const isEditing = !!productData.id;
@@ -1237,7 +1266,6 @@
 // };
 
 // export default Inventory;
-
 
 'use client';
 
@@ -1268,8 +1296,13 @@ export interface Product {
 
 // Interface for the raw data from Excel (flexible keys)
 interface ExcelRow {
-  [key: string]: any;
+  [key: string]: string | number;
 }
+
+// Type for the data returned by the barcode scanner
+type DetectedBarcode = {
+    rawValue: string;
+};
 
 const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(amount);
@@ -1453,8 +1486,7 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
         return 0;
     }, [formData.sellingPrice, formData.gstRate]);
     
-    type ScanResult = { rawValue: string };
-    const handleModalScan = useCallback((result: ScanResult[]) => {
+    const handleModalScan = useCallback((result: DetectedBarcode[]) => {
         if (result && result[0]) {
             setFormData(prev => ({ ...prev, sku: result[0].rawValue }));
             setIsScannerOpen(false);
@@ -1504,14 +1536,12 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
                     {isScannerOpen ? (
                         <div className="space-y-4">
                             <div className="w-full rounded-xl overflow-hidden border-2 border-gray-200 aspect-square">
-                                {/* eslint-disable @typescript-eslint/no-explicit-any */}
                                 <Scanner
-                                    onScan={handleModalScan as any}
+                                    onScan={handleModalScan}
                                     constraints={{ facingMode: "environment" }}
                                     scanDelay={300}
                                     styles={{ container: { width: '100%', height: '100%' } }}
                                 />
-                                {/* eslint-enable @typescript-eslint/no-explicit-any */}
                             </div>
                             <button onClick={() => setIsScannerOpen(false)} className="w-full px-4 py-2.5 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 font-medium transition-colors">Cancel Scan</button>
                         </div>
@@ -1654,7 +1684,6 @@ const Inventory: FC = () => {
         }
     }, [sessionStatus]);
 
-    // --- MODIFIED & IMPROVED: EXCEL UPLOAD HANDLER ---
     const handleExcelUpload = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -1669,11 +1698,9 @@ const Inventory: FC = () => {
                 const sheet = workbook.Sheets[sheetName];
                 const rows: ExcelRow[] = XLSX.utils.sheet_to_json(sheet);
 
-                // --- DEBUGGING: Log raw data parsed from Excel ---
                 console.log("Raw data from Excel:", rows);
 
-                // --- ROBUST PARSING: Normalize headers to be flexible ---
-                const getColumn = (row: ExcelRow, expectedHeaders: string[]): any => {
+                const getColumn = (row: ExcelRow, expectedHeaders: string[]): unknown => {
                     for (const header of expectedHeaders) {
                         const lowerHeader = header.toLowerCase();
                         for (const key in row) {
@@ -1694,10 +1721,9 @@ const Inventory: FC = () => {
                     gstRate: Number(getColumn(row, ["GST Rate", "GST"])) || 0,
                 }));
                 
-                // --- DEBUGGING: Log processed data before sending to API ---
                 console.log("Processed products being sent to API:", uploadedProducts);
 
-                const response = await fetch('/api/products/batch', { // Recommended to use a specific batch endpoint
+                const response = await fetch('/api/products/batch', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(uploadedProducts),
@@ -1719,7 +1745,6 @@ const Inventory: FC = () => {
                 console.error("Excel Upload Error:", err);
                 alert(`Error: ${errorMessage}`);
             } finally {
-                // Reset the file input so the user can upload the same file again if needed
                 e.target.value = '';
             }
         };
