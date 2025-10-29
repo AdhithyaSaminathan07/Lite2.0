@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // // // src/components/Inventory.tsx
 // 'use client';
 
@@ -5,13 +6,23 @@
 // import { useSession } from "next-auth/react";
 // import * as XLSX from "xlsx";
 // import { Upload, Edit2, Plus, X, Trash2, Search, Image as ImageIcon, Camera, Loader2, Info, AlertTriangle } from "lucide-react";
+=======
+// 'use client';
+
+// import React, { useState, useEffect, FC, ChangeEvent, useRef } from "react";
+// import * as XLSX from "xlsx";
+// import { Upload, Edit2, Plus, X, Trash2, Search, Image as ImageIcon, Camera, Loader2, Info } from "lucide-react";
+>>>>>>> friend/LIte-GoWhats
 // import { motion, useAnimationControls, PanInfo } from "framer-motion";
 // import { Html5Qrcode } from "html5-qrcode";
 // import Image from "next/image";
 
+<<<<<<< HEAD
 // // --- CONFIGURATION ---
 // const LOW_STOCK_THRESHOLD = 10;
 
+=======
+>>>>>>> friend/LIte-GoWhats
 // // --- INTERFACES AND UTILITIES ---
 // export interface Product {
 //   id: string;
@@ -22,7 +33,10 @@
 //   gstRate: number;
 //   image?: string;
 //   sku?: string;
+<<<<<<< HEAD
 //   lowStockThreshold?: number;
+=======
+>>>>>>> friend/LIte-GoWhats
 // }
 
 // interface ExcelRow {
@@ -51,9 +65,12 @@
 //   const controls = useAnimationControls();
 //   const ACTION_WIDTH = 160;
 
+<<<<<<< HEAD
 //   const alertThreshold = product.lowStockThreshold ?? LOW_STOCK_THRESHOLD;
 //   const isLowStock = product.quantity <= alertThreshold;
 
+=======
+>>>>>>> friend/LIte-GoWhats
 //   useEffect(() => {
 //     if (!isSwiped) {
 //       controls.start({ x: 0 });
@@ -69,8 +86,17 @@
 //     }
 //   };
 
+<<<<<<< HEAD
 //   return (
 //     <div className={`relative w-full bg-gray-200 rounded-lg overflow-hidden shadow-sm ${isLowStock ? 'ring-2 ring-red-500' : ''}`}>
+=======
+//   const calculateTotal = (quantity: number, sellingPrice: number, gstRate: number): number => {
+//     return quantity * sellingPrice * (1 + gstRate / 100);
+//   };
+
+//   return (
+//     <div className="relative w-full bg-gray-200 rounded-lg overflow-hidden shadow-sm">
+>>>>>>> friend/LIte-GoWhats
 //       <div className="absolute inset-y-0 right-0 flex" style={{ width: ACTION_WIDTH }}>
 //         <button onClick={() => onEdit(product)} className="w-1/2 h-full flex flex-col items-center justify-center bg-indigo-500 text-white transition-colors hover:bg-indigo-600">
 //           <Edit2 className="w-5 h-5" /><span className="text-xs mt-1">Edit</span>
@@ -94,6 +120,7 @@
 //            </button>
 //          )}
 //         <div className="flex-1 overflow-hidden">
+<<<<<<< HEAD
 //             <h3 className="font-semibold text-gray-800 truncate">{product.name}</h3>
 //             <div className="flex items-center justify-between flex-wrap gap-2 mt-1.5">
 //                 <p className="text-sm text-gray-500 truncate">ID: {product.sku || 'N/A'}</p>
@@ -107,6 +134,11 @@
 //                     <p className="text-sm text-gray-700 font-medium">Qty: {product.quantity}</p>
 //                 </div>
 //             </div>
+=======
+//           <h3 className="font-semibold text-gray-800 truncate">{product.name}</h3>
+//           <p className="text-sm text-gray-500 truncate">Product ID: {product.sku || 'N/A'}</p>
+//           <p className="text-sm text-gray-700 font-medium mt-1">Revenue: {formatCurrency(calculateTotal(product.quantity, product.sellingPrice, product.gstRate))}</p>
+>>>>>>> friend/LIte-GoWhats
 //         </div>
 //       </motion.div>
 //     </div>
@@ -129,11 +161,16 @@
 //             </tr>
 //           </thead>
 //           <tbody className="bg-white divide-y divide-gray-200">
+<<<<<<< HEAD
 //             {products.map((p) => {
 //                 const alertThreshold = p.lowStockThreshold ?? LOW_STOCK_THRESHOLD;
 //                 const isLowStock = p.quantity <= alertThreshold;
 //                 return (
 //                 <tr key={p.id} className={isLowStock ? 'bg-red-50' : ''}>
+=======
+//             {products.map((p) => (
+//                 <tr key={p.id}>
+>>>>>>> friend/LIte-GoWhats
 //                   <td className="px-3 py-2">
 //                   {p.image ? (
 //                       <Image src={p.image} alt={p.name} width={56} height={56} className="w-14 h-14 object-cover rounded-md" />
@@ -145,6 +182,7 @@
 //                   </td>
 //                   <td className="px-3 py-2 text-sm font-medium text-gray-900">{p.name}</td>
 //                   <td className="px-3 py-2 text-sm text-gray-500 truncate max-w-xs">{p.sku || 'N/A'}</td>
+<<<<<<< HEAD
 //                   <td className="px-3 py-2 text-sm">
 //                     <div className="flex items-center gap-2">
 //                         {isLowStock && (
@@ -155,6 +193,9 @@
 //                         <span className={isLowStock ? 'text-red-600 font-semibold' : 'text-gray-500'}>{p.quantity}</span>
 //                     </div>
 //                   </td>
+=======
+//                   <td className="px-3 py-2 text-sm text-gray-500">{p.quantity}</td>
+>>>>>>> friend/LIte-GoWhats
 //                   <td className="px-3 py-2 text-sm text-gray-500">{formatCurrency(p.sellingPrice)}</td>
 //                   <td className="px-3 py-2 text-right">
 //                     <div className="flex justify-end gap-4">
@@ -163,8 +204,12 @@
 //                     </div>
 //                   </td>
 //                 </tr>
+<<<<<<< HEAD
 //                 );
 //             })}
+=======
+//             ))}
+>>>>>>> friend/LIte-GoWhats
 //           </tbody>
 //         </table>
 //       </div>
@@ -182,6 +227,7 @@
 
 // // --- PRODUCT FORM MODAL ---
 // type ProductFormData = Omit<Product, 'id'> & { id?: string };
+<<<<<<< HEAD
 // type ProductFormState = Omit<ProductFormData, 'quantity' | 'buyingPrice' | 'sellingPrice' | 'gstRate' | 'lowStockThreshold'> & {
 //     quantity?: number | ''; // Allow empty string for input field
 //     buyingPrice?: number | '';
@@ -189,6 +235,8 @@
 //     gstRate?: number | '';
 //     lowStockThreshold?: number | '';
 // };
+=======
+>>>>>>> friend/LIte-GoWhats
 // interface ProductFormModalProps {
 //     product: ProductFormData | null;
 //     onSave: (productData: ProductFormData, imageFile: File | null) => Promise<void>;
@@ -196,6 +244,7 @@
 // }
 
 // const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose }) => {
+<<<<<<< HEAD
 //     const getInitialState = (): ProductFormState => {
 //         if (product) {
 //             return {
@@ -214,6 +263,11 @@
 //     };
 
 //     const [formData, setFormData] = useState<ProductFormState>(getInitialState);
+=======
+//     const [formData, setFormData] = useState<ProductFormData>(
+//         product || { name: "", sku: "", quantity: 0, buyingPrice: 0, sellingPrice: 0, gstRate: 0, image: '' }
+//     );
+>>>>>>> friend/LIte-GoWhats
 //     const [imagePreview, setImagePreview] = useState<string | null>(product?.image || null);
 //     const [imageFile, setImageFile] = useState<File | null>(null);
 //     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -227,10 +281,21 @@
 //             scannerRef.current = scanner;
 //             const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
+<<<<<<< HEAD
 //             scanner.start({ facingMode: "environment" }, config, (decodedText) => {
 //                 setFormData(prev => ({ ...prev, sku: decodedText }));
 //                 setIsScannerOpen(false);
 //             }, () => {}).catch(err => console.error("Unable to start scanning.", err));
+=======
+//             scanner.start(
+//                 { facingMode: "environment" }, config,
+//                 (decodedText) => {
+//                     setFormData(prev => ({ ...prev, sku: decodedText }));
+//                     setIsScannerOpen(false);
+//                 },
+//                 () => {} // onScanFailure
+//             ).catch(err => console.error("Unable to start scanning.", err));
+>>>>>>> friend/LIte-GoWhats
 //         }
 
 //         return () => {
@@ -242,10 +307,14 @@
 
 //     const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
 //         const { name, value, type } = e.target;
+<<<<<<< HEAD
 //         setFormData(prev => ({
 //             ...prev,
 //             [name]: type === 'number' ? (value === '' ? '' : Number(value)) : value
 //         }));
+=======
+//         setFormData(prev => ({ ...prev, [name]: type === 'number' ? Number(value) || 0 : value }));
+>>>>>>> friend/LIte-GoWhats
 //     };
 
 //     const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -257,6 +326,7 @@
 //     };
 
 //     const handleFormSubmit = () => {
+<<<<<<< HEAD
 //         const dataToSave: ProductFormData = {
 //             ...formData,
 //             quantity: Number(formData.quantity) || 0,
@@ -266,6 +336,9 @@
 //             lowStockThreshold: Number(formData.lowStockThreshold) || undefined,
 //         };
 //         onSave(dataToSave, imageFile);
+=======
+//         onSave(formData, imageFile);
+>>>>>>> friend/LIte-GoWhats
 //     };
 
 //     return (
@@ -312,6 +385,7 @@
 //                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 //                                 <div className="space-y-2">
 //                                     <label className="text-sm font-medium text-gray-700">Quantity</label>
+<<<<<<< HEAD
 //                                     <input type="number" name="quantity" placeholder="e.g., 50" className="w-full border-2 border-gray-200 px-4 py-3 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none" value={formData.quantity} onChange={handleInputChange} />
 //                                 </div>
 //                                 <div className="space-y-2">
@@ -343,6 +417,23 @@
 //                                         <input type="number" name="gstRate" placeholder="e.g., 18" className="w-full border-2 border-gray-200 px-4 py-3 pr-12 rounded-xl focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all outline-none" value={formData.gstRate} onChange={handleInputChange} />
 //                                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">%</span>
 //                                     </div>
+=======
+//                                     <input type="number" name="quantity" placeholder="0" className="w-full border-2 border-gray-200 px-4 py-3 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none" value={formData.quantity} onChange={handleInputChange} />
+//                                 </div>
+//                                 <div className="space-y-2">
+//                                     <label className="text-sm font-medium text-gray-700">Selling Price</label>
+//                                     <div className="relative">
+//                                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₹</span>
+//                                         <input type="number" name="sellingPrice" placeholder="0.00" className="w-full border-2 border-gray-200 pl-8 pr-4 py-3 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all outline-none" value={formData.sellingPrice} onChange={handleInputChange} />
+//                                     </div>
+//                                 </div>
+//                             </div>
+//                             <div className="space-y-2">
+//                                 <label className="text-sm font-medium text-gray-700">GST Rate</label>
+//                                 <div className="relative">
+//                                     <input type="number" name="gstRate" placeholder="0" className="w-full border-2 border-gray-200 px-4 py-3 pr-12 rounded-xl focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all outline-none" value={formData.gstRate} onChange={handleInputChange} />
+//                                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">%</span>
+>>>>>>> friend/LIte-GoWhats
 //                                 </div>
 //                             </div>
 //                         </>
@@ -358,6 +449,7 @@
 //     );
 // };
 
+<<<<<<< HEAD
 
 // // --- MAIN INVENTORY COMPONENT ---
 // const Inventory: FC = () => {
@@ -365,12 +457,19 @@
 //     const { status: sessionStatus } = useSession();
 //     const [products, setProducts] = useState<Product[]>([]);
 //     const [fetchStatus, setFetchStatus] = useState<'loading' | 'succeeded' | 'failed'>('loading');
+=======
+// // --- MAIN INVENTORY COMPONENT ---
+// const Inventory: FC = () => {
+//     const [products, setProducts] = useState<Product[]>([]);
+//     const [status, setStatus] = useState<'loading' | 'succeeded' | 'failed'>('loading');
+>>>>>>> friend/LIte-GoWhats
 //     const [error, setError] = useState<string | null>(null);
 //     const [modalState, setModalState] = useState<{ isOpen: boolean; product: ProductFormData | null }>({ isOpen: false, product: null });
 //     const [swipedProductId, setSwipedProductId] = useState<string | null>(null);
 //     const [searchQuery, setSearchQuery] = useState<string>("");
 
 //     useEffect(() => {
+<<<<<<< HEAD
 //         if (sessionStatus === 'authenticated') {
 //             const fetchProducts = async () => {
 //                 setFetchStatus('loading');
@@ -397,13 +496,38 @@
 //             setFetchStatus('succeeded');
 //         }
 //     }, [sessionStatus]);
+=======
+//         const fetchProducts = async () => {
+//             setStatus('loading');
+//             try {
+//                 const response = await fetch('/api/products');
+//                 if (!response.ok) {
+//                   const errorData = await response.json().catch(() => ({ message: 'Failed to fetch products' }));
+//                   throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+//                 }
+//                 const data: Product[] = await response.json();
+//                 setProducts(data);
+//                 setStatus('succeeded');
+//             } catch (err: any) {
+//                 console.error("Error fetching products:", err);
+//                 setError(err.message);
+//                 setStatus('failed');
+//             }
+//         };
+//         fetchProducts();
+//     }, []);
+>>>>>>> friend/LIte-GoWhats
 
 //     const filteredProducts = products.filter(product =>
 //         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
 //         (product.sku && product.sku.toLowerCase().includes(searchQuery.toLowerCase()))
 //     );
 
+<<<<<<< HEAD
 //     const handleExcelUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+=======
+//     const handleExcelUpload = (e: ChangeEvent<HTMLInputElement>) => {
+>>>>>>> friend/LIte-GoWhats
 //         const file = e.target.files?.[0];
 //         if (!file) return;
 //         const reader = new FileReader();
@@ -425,6 +549,10 @@
 //                     gstRate: Number(row["GST Rate"]) || 0,
 //                 }));
 
+<<<<<<< HEAD
+=======
+//                 // CORRECTED: The batch upload should go to the main POST endpoint.
+>>>>>>> friend/LIte-GoWhats
 //                 const response = await fetch('/api/products', {
 //                     method: 'POST',
 //                     headers: { 'Content-Type': 'application/json' },
@@ -436,6 +564,7 @@
 //                     throw new Error(errorData.message || 'Failed to upload products');
 //                 }
 //                 const allProducts: Product[] = await response.json();
+<<<<<<< HEAD
                 
 //                 if (Array.isArray(allProducts)) {
 //                     setProducts(allProducts);
@@ -448,6 +577,13 @@
 //                 const message = err instanceof Error ? err.message : String(err);
 //                 console.error("Error uploading products:", message);
 //                 alert(`An error occurred during the upload: ${message}`);
+=======
+//                 setProducts(allProducts);
+//                 alert('Products uploaded successfully!');
+//             } catch (err: any) {
+//                 console.error("Error uploading products:", err);
+//                 alert(`An error occurred during the upload: ${err.message}`);
+>>>>>>> friend/LIte-GoWhats
 //             }
 //         };
 //         reader.readAsArrayBuffer(file);
@@ -459,6 +595,10 @@
 //             if (imageFile) {
 //                 const formData = new FormData();
 //                 formData.append('file', imageFile);
+<<<<<<< HEAD
+=======
+//                 // NOTE: You'll need to create this /api/upload route to handle file uploads
+>>>>>>> friend/LIte-GoWhats
 //                 const uploadResponse = await fetch('/api/upload', { method: 'POST', body: formData });
 //                 const uploadData = await uploadResponse.json();
 //                 if (!uploadResponse.ok || !uploadData.success) {
@@ -483,6 +623,7 @@
 //                 throw new Error(errorData.message || `Failed to ${isEditing ? 'update' : 'create'} product`);
 //             }
             
+<<<<<<< HEAD
 //             const savedData = await response.json();
 
 //             // After a POST, the response might be the full list or the single new product.
@@ -511,6 +652,17 @@
 //             const message = err instanceof Error ? err.message : String(err);
 //             console.error("Error saving product:", message);
 //             alert(`Failed to save product: ${message}`);
+=======
+//             // CORRECTED: Both POST and PUT will now return the full, updated list of products.
+//             // This simplifies the logic and fixes the bug.
+//             const updatedProductList: Product[] = await response.json();
+//             setProducts(updatedProductList);
+
+//             setModalState({ isOpen: false, product: null });
+//         } catch (err: any) {
+//             console.error("Error saving product:", err);
+//             alert(`Failed to save product: ${err.message}`);
+>>>>>>> friend/LIte-GoWhats
 //         }
 //     };
 
@@ -518,20 +670,31 @@
 //         if (window.confirm('Are you sure you want to delete this product?')) {
 //             try {
 //                 const response = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+<<<<<<< HEAD
 //                 if (response.status !== 204) {
+=======
+//                 if (response.status !== 204) { // Check for a "No Content" success status
+>>>>>>> friend/LIte-GoWhats
 //                   const errorData = await response.json().catch(() => ({ message: 'Failed to delete product' }));
 //                   throw new Error(errorData.message);
 //                 }
 //                 setProducts(products.filter((p) => p.id !== id));
+<<<<<<< HEAD
 //             // FIX 5: Replaced 'any' with 'unknown'.
 //             } catch (err: unknown) {
 //                 const message = err instanceof Error ? err.message : String(err);
 //                 console.error("Error deleting product:", message);
 //                 alert(`Error deleting product: ${message}`);
+=======
+//             } catch (err: any) {
+//                 console.error("Error deleting product:", err);
+//                 alert(`Error deleting product: ${err.message}`);
+>>>>>>> friend/LIte-GoWhats
 //             }
 //         }
 //         setSwipedProductId(null);
 //     };
+<<<<<<< HEAD
     
 //     const renderContent = () => {
 //         if (sessionStatus === 'loading' || fetchStatus === 'loading') {
@@ -543,11 +706,24 @@
 //         }
 
 //         if (fetchStatus === 'failed') {
+=======
+
+//     const renderContent = () => {
+//         if (status === 'loading') {
+//             return <div className="flex justify-center items-center h-64"><Loader2 className="w-8 h-8 animate-spin text-indigo-600" /> <span className="ml-2">Loading Products...</span></div>;
+//         }
+
+//         if (status === 'failed') {
+>>>>>>> friend/LIte-GoWhats
 //             return <div className="flex flex-col items-center justify-center h-64 bg-red-50 text-red-700 rounded-lg p-4"><Info className="w-8 h-8 mb-2" /><strong>Error:</strong> {error}</div>;
 //         }
 
 //         if (products.length === 0) {
+<<<<<<< HEAD
 //             return <div className="text-center h-64 flex flex-col justify-center items-center bg-gray-50 rounded-lg"><Info className="w-8 h-8 mb-2 text-gray-400" /> <h3 className="font-semibold">No Products Found</h3><p className="text-gray-500">Click &quot;Add Product&quot; to get started.</p></div>
+=======
+//             return <div className="text-center h-64 flex flex-col justify-center items-center bg-gray-50 rounded-lg"><Info className="w-8 h-8 mb-2 text-gray-400" /> <h3 className="font-semibold">No Products Found</h3><p className="text-gray-500">Click "Add Product" to get started.</p></div>
+>>>>>>> friend/LIte-GoWhats
 //         }
         
 //         if (filteredProducts.length === 0) {
@@ -608,6 +784,7 @@
 
 // export default Inventory;
 
+<<<<<<< HEAD
 
 
 
@@ -1217,6 +1394,16 @@ import { motion, useAnimationControls, PanInfo } from "framer-motion";
 import Image from "next/image";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Scanner } from "@yudiel/react-qr-scanner";
+=======
+'use client';
+
+import React, { useState, useEffect, FC, ChangeEvent, useRef } from "react";
+import * as XLSX from "xlsx";
+import { Upload, Edit2, Plus, X, Trash2, Search, Image as ImageIcon, Camera, Loader2, Info, AlertTriangle } from "lucide-react";
+import { motion, useAnimationControls, PanInfo } from "framer-motion";
+import { Html5Qrcode } from "html5-qrcode";
+import Image from "next/image";
+>>>>>>> friend/LIte-GoWhats
 
 // --- CONFIGURATION ---
 const LOW_STOCK_THRESHOLD = 10;
@@ -1256,9 +1443,16 @@ interface MobileProductCardProps {
   onDelete: (id: string) => void;
 }
 
+<<<<<<< HEAD
 const MobileProductCard: FC<MobileProductCardProps> = React.memo(({ product, isSwiped, onSwipe, onEdit, onDelete }) => {
   const controls = useAnimationControls();
   const ACTION_WIDTH = 160;
+=======
+const MobileProductCard: FC<MobileProductCardProps> = ({ product, isSwiped, onSwipe, onEdit, onDelete }) => {
+  const controls = useAnimationControls();
+  const ACTION_WIDTH = 160;
+
+>>>>>>> friend/LIte-GoWhats
   const alertThreshold = product.lowStockThreshold ?? LOW_STOCK_THRESHOLD;
   const isLowStock = product.quantity <= alertThreshold;
 
@@ -1302,6 +1496,7 @@ const MobileProductCard: FC<MobileProductCardProps> = React.memo(({ product, isS
            </button>
          )}
         <div className="flex-1 overflow-hidden">
+<<<<<<< HEAD
             <h3 className="font-semibold text-gray-800 truncate">{product.name}</h3>
             <div className="flex items-center justify-between flex-wrap gap-2 mt-1.5">
                 <p className="text-sm text-gray-500 truncate">ID: {product.sku || 'N/A'}</p>
@@ -1315,12 +1510,30 @@ const MobileProductCard: FC<MobileProductCardProps> = React.memo(({ product, isS
                     <p className="text-sm text-gray-700 font-medium">Qty: {product.quantity}</p>
                 </div>
             </div>
+=======
+          <h3 className="font-semibold text-gray-800 truncate">{product.name}</h3>
+          <p className="text-sm text-gray-500 truncate">Product ID: {product.sku || 'N/A'}</p>
+          <div className="flex items-center gap-2 mt-1">
+            {isLowStock && (
+                <div className="flex items-center gap-1 text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
+                    <AlertTriangle className="w-3 h-3" />
+                    <span className="text-xs font-medium">Low Stock</span>
+                </div>
+            )}
+            <p className="text-sm text-gray-700 font-medium">Qty: {product.quantity}</p>
+          </div>
+>>>>>>> friend/LIte-GoWhats
         </div>
       </motion.div>
     </div>
   );
+<<<<<<< HEAD
 });
 MobileProductCard.displayName = 'MobileProductCard';
+=======
+};
+
+>>>>>>> friend/LIte-GoWhats
 
 // --- DESKTOP PRODUCT TABLE ---
 const DesktopProductTable: FC<{ products: Product[]; onEdit: (p: Product) => void; onDelete: (id: string) => void; }> = ({ products, onEdit, onDelete }) => (
@@ -1355,6 +1568,10 @@ const DesktopProductTable: FC<{ products: Product[]; onEdit: (p: Product) => voi
                   <td className="px-3 py-2 text-sm text-gray-500 truncate max-w-xs">{p.sku || 'N/A'}</td>
                   <td className="px-3 py-2 text-sm">
                     <div className="flex items-center gap-2">
+<<<<<<< HEAD
+=======
+                        {/* CORRECTED: Wrapped icon in a span to apply the title attribute for tooltip */}
+>>>>>>> friend/LIte-GoWhats
                         {isLowStock && (
                           <span title={`Alert set for ${alertThreshold}`}>
                             <AlertTriangle className="w-4 h-4 text-red-500" />
@@ -1378,6 +1595,7 @@ const DesktopProductTable: FC<{ products: Product[]; onEdit: (p: Product) => voi
       </div>
 );
 
+<<<<<<< HEAD
 // --- PRODUCT FORM MODAL ---
 type ProductFormData = Omit<Product, 'id'> & { id?: string };
 type ProductFormState = Omit<ProductFormData, 'quantity' | 'buyingPrice' | 'sellingPrice' | 'gstRate' | 'lowStockThreshold'> & {
@@ -1387,6 +1605,30 @@ type ProductFormState = Omit<ProductFormData, 'quantity' | 'buyingPrice' | 'sell
     gstRate?: number | '';
     lowStockThreshold?: number | '';
 };
+=======
+
+// --- MOBILE PRODUCT LIST ---
+const MobileProductList: FC<{ products: Product[]; swipedId: string | null; onSwipe: (id: string | null) => void; onEdit: (p: Product) => void; onDelete: (id: string) => void; }> = ({ products, swipedId, onSwipe, onEdit, onDelete }) => (
+    <div className="md:hidden space-y-3 pb-20">
+        {products.map((p) => (
+          <MobileProductCard key={p.id} product={p} isSwiped={swipedId === p.id} onSwipe={onSwipe} onEdit={onEdit} onDelete={onDelete} />
+        ))}
+    </div>
+);
+
+// --- PRODUCT FORM MODAL ---
+type ProductFormData = Omit<Product, 'id'> & { id?: string };
+
+// CORRECTED: Created a new type for the form's state to allow undefined number fields
+type ProductFormState = Omit<ProductFormData, 'quantity' | 'buyingPrice' | 'sellingPrice' | 'gstRate' | 'lowStockThreshold'> & {
+    quantity?: number;
+    buyingPrice?: number;
+    sellingPrice?: number;
+    gstRate?: number;
+    lowStockThreshold?: number;
+};
+
+>>>>>>> friend/LIte-GoWhats
 interface ProductFormModalProps {
     product: ProductFormData | null;
     onSave: (productData: ProductFormData, imageFile: File | null) => Promise<void>;
@@ -1394,6 +1636,7 @@ interface ProductFormModalProps {
 }
 
 const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose }) => {
+<<<<<<< HEAD
     const getInitialState = useCallback((): ProductFormState => {
         if (product) {
             return {
@@ -1410,10 +1653,32 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
     }, [product]);
 
     const [formData, setFormData] = useState<ProductFormState>(getInitialState);
+=======
+    // CORRECTED: The initial state for a new product is now type-safe
+    const getInitialState = (): ProductFormState => {
+        if (product) {
+            return product;
+        }
+        return {
+            name: "",
+            sku: "",
+            quantity: undefined,
+            buyingPrice: undefined,
+            sellingPrice: undefined,
+            gstRate: undefined,
+            image: '',
+            lowStockThreshold: undefined
+        };
+    };
+
+    const [formData, setFormData] = useState<ProductFormState>(getInitialState);
+
+>>>>>>> friend/LIte-GoWhats
     const [imagePreview, setImagePreview] = useState<string | null>(product?.image || null);
     const [imageFile, setImageFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isScannerOpen, setIsScannerOpen] = useState(false);
+<<<<<<< HEAD
     
     // --- GST Calculation ---
     const gstAmount = useMemo(() => {
@@ -1432,12 +1697,39 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
             setIsScannerOpen(false);
         }
     }, []);
+=======
+    const scannerRef = useRef<Html5Qrcode | null>(null);
+    const readerId = "qr-reader-modal";
+
+    useEffect(() => {
+        if (isScannerOpen) {
+            const scanner = new Html5Qrcode(readerId);
+            scannerRef.current = scanner;
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+            scanner.start({ facingMode: "environment" }, config, (decodedText) => {
+                setFormData(prev => ({ ...prev, sku: decodedText }));
+                setIsScannerOpen(false);
+            }, () => {}).catch(err => console.error("Unable to start scanning.", err));
+        }
+
+        return () => {
+            if (scannerRef.current?.isScanning) {
+                scannerRef.current.stop().catch(err => console.error("Failed to stop scanner.", err));
+            }
+        };
+    }, [isScannerOpen]);
+>>>>>>> friend/LIte-GoWhats
 
     const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
         const { name, value, type } = e.target;
         setFormData(prev => ({
             ...prev,
+<<<<<<< HEAD
             [name]: type === 'number' ? (value === '' ? '' : Number(value)) : value
+=======
+            [name]: type === 'number' ? (value === '' ? undefined : Number(value)) : value
+>>>>>>> friend/LIte-GoWhats
         }));
     };
 
@@ -1450,6 +1742,7 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
     };
 
     const handleFormSubmit = () => {
+<<<<<<< HEAD
         const dataToSave: ProductFormData = {
             ...formData,
             quantity: Number(formData.quantity) || 0,
@@ -1457,6 +1750,15 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
             gstRate: Number(formData.gstRate) || 0,
             buyingPrice: Number(formData.buyingPrice) || 0,
             lowStockThreshold: Number(formData.lowStockThreshold) || undefined,
+=======
+        // Coalesce undefined values back to 0 before saving
+        const dataToSave: ProductFormData = {
+            ...formData,
+            quantity: formData.quantity ?? 0,
+            sellingPrice: formData.sellingPrice ?? 0,
+            gstRate: formData.gstRate ?? 0,
+            buyingPrice: formData.buyingPrice ?? 0,
+>>>>>>> friend/LIte-GoWhats
         };
         onSave(dataToSave, imageFile);
     };
@@ -1475,6 +1777,7 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
                 <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
                     {isScannerOpen ? (
                         <div className="space-y-4">
+<<<<<<< HEAD
                             <div className="w-full rounded-xl overflow-hidden border-2 border-gray-200 aspect-square">
                                 {/* eslint-disable @typescript-eslint/no-explicit-any */}
                                 <Scanner
@@ -1485,6 +1788,9 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
                                 />
                                 {/* eslint-enable @typescript-eslint/no-explicit-any */}
                             </div>
+=======
+                            <div id={readerId} className="w-full rounded-xl overflow-hidden border-2 border-gray-200" />
+>>>>>>> friend/LIte-GoWhats
                             <button onClick={() => setIsScannerOpen(false)} className="w-full px-4 py-2.5 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 font-medium transition-colors">Cancel Scan</button>
                         </div>
                     ) : (
@@ -1514,7 +1820,11 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-gray-700">Quantity</label>
+<<<<<<< HEAD
                                     <input type="number" name="quantity" placeholder="e.g., 50" className="w-full border-2 border-gray-200 px-4 py-3 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none" value={formData.quantity} onChange={handleInputChange} />
+=======
+                                    <input type="number" name="quantity" placeholder="e.g., 50" className="w-full border-2 border-gray-200 px-4 py-3 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none" value={formData.quantity ?? ''} onChange={handleInputChange} />
+>>>>>>> friend/LIte-GoWhats
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-gray-700 flex items-center gap-1.5" title="Set a custom alert when quantity falls to this level. Leave blank to use the global setting.">
@@ -1526,7 +1836,11 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
                                         name="lowStockThreshold"
                                         placeholder={`Default: ${LOW_STOCK_THRESHOLD}`}
                                         className="w-full border-2 border-gray-200 px-4 py-3 rounded-xl focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all outline-none"
+<<<<<<< HEAD
                                         value={formData.lowStockThreshold}
+=======
+                                        value={formData.lowStockThreshold ?? ''}
+>>>>>>> friend/LIte-GoWhats
                                         onChange={handleInputChange}
                                     />
                                 </div>
@@ -1536,17 +1850,26 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
                                     <label className="text-sm font-medium text-gray-700">Selling Price</label>
                                     <div className="relative">
                                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₹</span>
+<<<<<<< HEAD
                                         <input type="number" name="sellingPrice" placeholder="e.g., 199.99" className="w-full border-2 border-gray-200 pl-8 pr-4 py-3 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all outline-none" value={formData.sellingPrice} onChange={handleInputChange} />
+=======
+                                        <input type="number" name="sellingPrice" placeholder="e.g., 199.99" className="w-full border-2 border-gray-200 pl-8 pr-4 py-3 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all outline-none" value={formData.sellingPrice ?? ''} onChange={handleInputChange} />
+>>>>>>> friend/LIte-GoWhats
                                     </div>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-gray-700">GST Rate</label>
                                     <div className="relative">
+<<<<<<< HEAD
                                         <input type="number" name="gstRate" placeholder="e.g., 18" className="w-full border-2 border-gray-200 px-4 py-3 pr-12 rounded-xl focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all outline-none" value={formData.gstRate} onChange={handleInputChange} />
+=======
+                                        <input type="number" name="gstRate" placeholder="e.g., 18" className="w-full border-2 border-gray-200 px-4 py-3 pr-12 rounded-xl focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all outline-none" value={formData.gstRate ?? ''} onChange={handleInputChange} />
+>>>>>>> friend/LIte-GoWhats
                                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">%</span>
                                     </div>
                                 </div>
                             </div>
+<<<<<<< HEAD
                             {/* --- Start: GST Calculation Display --- */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border">
                                 <div className="space-y-1">
@@ -1563,6 +1886,8 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
                                 </div>
                             </div>
                             {/* --- End: GST Calculation Display --- */}
+=======
+>>>>>>> friend/LIte-GoWhats
                         </>
                     )}
                 </div>
@@ -1579,14 +1904,20 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
 
 // --- MAIN INVENTORY COMPONENT ---
 const Inventory: FC = () => {
+<<<<<<< HEAD
     const { status: sessionStatus } = useSession();
     const [products, setProducts] = useState<Product[]>([]);
     const [fetchStatus, setFetchStatus] = useState<'loading' | 'succeeded' | 'failed'>('loading');
+=======
+    const [products, setProducts] = useState<Product[]>([]);
+    const [status, setStatus] = useState<'loading' | 'succeeded' | 'failed'>('loading');
+>>>>>>> friend/LIte-GoWhats
     const [error, setError] = useState<string | null>(null);
     const [modalState, setModalState] = useState<{ isOpen: boolean; product: ProductFormData | null }>({ isOpen: false, product: null });
     const [swipedProductId, setSwipedProductId] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState<string>("");
 
+<<<<<<< HEAD
     const filteredProducts = useMemo(() => {
         if (!searchQuery) return products;
         const lowercasedQuery = searchQuery.toLowerCase();
@@ -1627,6 +1958,42 @@ const Inventory: FC = () => {
     }, [sessionStatus]);
 
     const handleExcelUpload = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
+=======
+    useEffect(() => {
+        const fetchProducts = async () => {
+            setStatus('loading');
+            try {
+                const response = await fetch('/api/products');
+                if (!response.ok) {
+                  const errorData = await response.json().catch(() => ({ message: 'Failed to fetch products' }));
+                  throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                if (Array.isArray(data)) {
+                    setProducts(data);
+                } else {
+                    console.error("Error: API response for products is not an array.", data);
+                    setProducts([]);
+                }
+                
+                setStatus('succeeded');
+            } catch (err: any) {
+                console.error("Error fetching products:", err);
+                setError(err.message);
+                setStatus('failed');
+            }
+        };
+        fetchProducts();
+    }, []);
+
+    const filteredProducts = products.filter(product =>
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (product.sku && product.sku.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+
+    const handleExcelUpload = (e: ChangeEvent<HTMLInputElement>) => {
+>>>>>>> friend/LIte-GoWhats
         const file = e.target.files?.[0];
         if (!file) return;
         const reader = new FileReader();
@@ -1654,13 +2021,21 @@ const Inventory: FC = () => {
                     body: JSON.stringify(uploadedProducts),
                 });
 
+<<<<<<< HEAD
                 if (!response.ok) throw new Error('Failed to upload products');
                 
+=======
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to upload products');
+                }
+>>>>>>> friend/LIte-GoWhats
                 const allProducts: Product[] = await response.json();
                 
                 if (Array.isArray(allProducts)) {
                     setProducts(allProducts);
                     alert('Products uploaded successfully!');
+<<<<<<< HEAD
                 }
             } catch (err: unknown) {
                 alert(`An error occurred: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -1690,6 +2065,20 @@ const Inventory: FC = () => {
         }
         setModalState({ isOpen: false, product: null });
         
+=======
+                } else {
+                     console.error("Error: Bulk upload API did not return an array.", allProducts);
+                }
+            } catch (err: any) {
+                console.error("Error uploading products:", err);
+                alert(`An error occurred during the upload: ${err.message}`);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
+    const handleSaveProduct = async (productData: ProductFormData, imageFile: File | null) => {
+>>>>>>> friend/LIte-GoWhats
         try {
             let imageUrl = productData.image || '';
             if (imageFile) {
@@ -1697,11 +2086,18 @@ const Inventory: FC = () => {
                 formData.append('file', imageFile);
                 const uploadResponse = await fetch('/api/upload', { method: 'POST', body: formData });
                 const uploadData = await uploadResponse.json();
+<<<<<<< HEAD
                 if (!uploadResponse.ok) throw new Error(uploadData.message || 'Image upload failed');
+=======
+                if (!uploadResponse.ok || !uploadData.success) {
+                    throw new Error(uploadData.message || 'Image upload failed');
+                }
+>>>>>>> friend/LIte-GoWhats
                 imageUrl = uploadData.path;
             }
 
             const productToSave = { ...productData, image: imageUrl };
+<<<<<<< HEAD
             const url = isEditing ? `/api/products/${productData.id}` : '/api/products';
             const method = isEditing ? 'PUT' : 'POST';
 
@@ -1745,6 +2141,72 @@ const Inventory: FC = () => {
         if (products.length === 0) {
             return <div className="text-center h-64 flex flex-col justify-center items-center bg-gray-50 rounded-lg"><Info className="w-8 h-8 mb-2 text-gray-400" /> <h3 className="font-semibold">No Products Found</h3><p className="text-gray-500">Click &quot;Add Product&quot; to get started.</p></div>
         }
+=======
+            const isEditing = !!productData.id;
+            const url = isEditing ? `/api/products/${productData.id}` : '/api/products';
+            const method = isEditing ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(productToSave),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || `Failed to ${isEditing ? 'update' : 'create'} product`);
+            }
+            
+            const savedProduct: Product = await response.json();
+
+            if (isEditing) {
+                setProducts(prevProducts => 
+                    prevProducts.map(p => 
+                        p.id === savedProduct.id ? savedProduct : p
+                    )
+                );
+            } else {
+                setProducts(prevProducts => [...prevProducts, savedProduct]);
+            }
+
+            setModalState({ isOpen: false, product: null });
+        } catch (err: any) {
+            console.error("Error saving product:", err);
+            alert(`Failed to save product: ${err.message}`);
+        }
+    };
+
+    const handleDeleteProduct = async (id: string) => {
+        if (window.confirm('Are you sure you want to delete this product?')) {
+            try {
+                const response = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+                if (response.status !== 204) {
+                  const errorData = await response.json().catch(() => ({ message: 'Failed to delete product' }));
+                  throw new Error(errorData.message);
+                }
+                setProducts(products.filter((p) => p.id !== id));
+            } catch (err: any) {
+                console.error("Error deleting product:", err);
+                alert(`Error deleting product: ${err.message}`);
+            }
+        }
+        setSwipedProductId(null);
+    };
+    
+    const renderContent = () => {
+        if (status === 'loading') {
+            return <div className="flex justify-center items-center h-64"><Loader2 className="w-8 h-8 animate-spin text-indigo-600" /> <span className="ml-2">Loading Products...</span></div>;
+        }
+
+        if (status === 'failed') {
+            return <div className="flex flex-col items-center justify-center h-64 bg-red-50 text-red-700 rounded-lg p-4"><Info className="w-8 h-8 mb-2" /><strong>Error:</strong> {error}</div>;
+        }
+
+        if (products.length === 0) {
+            return <div className="text-center h-64 flex flex-col justify-center items-center bg-gray-50 rounded-lg"><Info className="w-8 h-8 mb-2 text-gray-400" /> <h3 className="font-semibold">No Products Found</h3><p className="text-gray-500">Click "Add Product" to get started.</p></div>
+        }
+        
+>>>>>>> friend/LIte-GoWhats
         if (filteredProducts.length === 0) {
             return <div className="text-center h-64 flex flex-col justify-center items-center bg-gray-50 rounded-lg"><Search className="w-8 h-8 mb-2 text-gray-400" /> <h3 className="font-semibold">No Matching Products</h3><p className="text-gray-500">Try a different search query.</p></div>
         }
@@ -1752,6 +2214,7 @@ const Inventory: FC = () => {
         return (
             <>
                 <DesktopProductTable products={filteredProducts} onEdit={(p) => setModalState({ isOpen: true, product: p })} onDelete={handleDeleteProduct} />
+<<<<<<< HEAD
                 <div ref={parentRef} className="md:hidden pb-20 h-[calc(100vh-200px)] overflow-y-auto">
                     <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
                         {rowVirtualizer.getVirtualItems().map(virtualItem => {
@@ -1777,6 +2240,9 @@ const Inventory: FC = () => {
                         })}
                     </div>
                 </div>
+=======
+                <MobileProductList products={filteredProducts} swipedId={swipedProductId} onSwipe={setSwipedProductId} onEdit={(p) => setModalState({ isOpen: true, product: p })} onDelete={handleDeleteProduct} />
+>>>>>>> friend/LIte-GoWhats
             </>
         );
     };

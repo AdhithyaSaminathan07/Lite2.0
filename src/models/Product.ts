@@ -1,26 +1,56 @@
+// // src/Models/Product.ts
+
+// import mongoose, { Schema, Document } from 'mongoose';
+
+// export interface IProduct extends Document {
+//   name: string;
+//   description?: string;
+//   price: number;
+//   inStock: boolean;
+//   createdAt: Date;
+// }
+
+// const ProductSchema: Schema = new Schema({
+//   name: {
+//     type: String,
+//     required: true,
+//   },
+//   description: {
+//     type: String,
+//   },
+//   price: {
+//     type: Number,
+//     required: true,
+//   },
+//   inStock: {
+//     type: Boolean,
+//     default: true,
+//   },
+//   createdAt: {
+//     type: Date,
+//     default: Date.now,
+//   },
+// });
+
+// export default mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema);
+
+// src/models/Product.ts
+
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 // Interface describing the properties a Product document has
 export interface IProduct extends Document {
-  tenantId: string;
   name: string;
   quantity: number;
   buyingPrice?: number;
   sellingPrice: number;
   gstRate: number;
   image?: string;
-  sku: string;
+  sku?: string;
   description?: string;
 }
 
-// The generic <IProduct> passed to `new Schema` tells TypeScript
-// what the resulting documents will look like.
-const ProductSchema = new Schema<IProduct>({
-  tenantId: {
-    type: String,
-    required: true,
-    index: true,
-  },
+const ProductSchema: Schema<IProduct> = new Schema({
   name: {
     type: String,
     required: [true, 'Product name is required.'],
@@ -52,26 +82,19 @@ const ProductSchema = new Schema<IProduct>({
   sku: {
     type: String,
     trim: true,
-    required: [true, 'Product ID (SKU) is required.'],
-    validate: {
-        // --- START: MODIFIED SECTION ---
-        // Using `!!` ensures the result is always a boolean (true/false)
-        validator: (value: string) => !!(value && value.trim().length > 0),
-        // --- END: MODIFIED SECTION ---
-        message: 'Product ID (SKU) cannot be an empty string.'
-    }
+    unique: true,
+    sparse: true, 
   },
   description: {
     type: String,
     trim: true,
   },
 }, {
-  timestamps: true,
+  // Add timestamps (createdAt, updatedAt)
+  timestamps: true, 
 });
 
-// Create a compound index to ensure SKU is unique per tenantId.
-ProductSchema.index({ tenantId: 1, sku: 1 }, { unique: true });
-
+// THIS IS THE MOST IMPORTANT LINE. IT FORCES MONGOOSE TO USE THE 'Product' COLLECTION.
 const Product: Model<IProduct> = mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema, 'Product');
 
 export default Product;
