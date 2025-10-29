@@ -26,24 +26,22 @@
 // };
 
 // // --- TYPE DEFINITIONS ---
-// // --- GST UPDATE: Added gstRate to CartItem ---
 // type CartItem = {
 //   id: number;
 //   productId?: string;
 //   name: string;
 //   quantity: number;
-//   price: number; // This is the base selling price (pre-GST)
-//   gstRate: number; // GST percentage for this item
+//   price: number; 
+//   gstRate: number; 
 //   isEditing?: boolean;
 // };
 
-// // --- GST UPDATE: Added gstRate to InventoryProduct ---
 // type InventoryProduct = {
 //   id: string;
 //   name: string;
 //   quantity: number;
 //   sellingPrice: number;
-//   gstRate: number; // GST percentage from inventory
+//   gstRate: number; 
 //   image?: string;
 //   sku?: string;
 // };
@@ -82,48 +80,6 @@
 //   );
 // };
 
-// // --- SCANNER MODAL COMPONENT ---
-// type ScannerModalProps = {
-//   isOpen: boolean;
-//   onClose: () => void;
-//   onScan: (results: IDetectedBarcode[]) => void;
-//   onError: (error: unknown) => void;
-// };
-
-// const ScannerModal: React.FC<ScannerModalProps> = ({ isOpen, onClose, onScan, onError }) => {
-//   if (!isOpen) return null;
-
-//   return (
-//     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-//       <div className="w-full max-w-sm mx-4">
-//         <div className="bg-white rounded-2xl overflow-hidden shadow-2xl">
-//           <div className="flex items-center justify-between p-4 bg-[#5a4fcf] text-white">
-//             <h3 className="text-lg font-semibold">Scan Barcode/QR</h3>
-//             <button onClick={onClose} className="p-1 rounded-full hover:bg-white/20 transition-colors"><X size={20} /></button>
-//           </div>
-//           <div className="p-4 bg-black">
-//             <div className="relative rounded-lg overflow-hidden bg-black">
-//               <Scanner
-//                 constraints={{ facingMode: 'environment' }} onScan={onScan} onError={onError} scanDelay={300}
-//                 styles={{ container: { width: '100%', height: 300, borderRadius: '8px', overflow: 'hidden' }, video: { objectFit: 'cover' } }}
-//               />
-//               <div className="absolute inset-0 border-2 border-white/30 rounded-lg pointer-events-none">
-//                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 border-2 border-green-400 rounded-lg">
-//                   <div className="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-green-400"></div>
-//                   <div className="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-green-400"></div>
-//                   <div className="absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-green-400"></div>
-//                   <div className="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-green-400"></div>
-//                 </div>
-//               </div>
-//             </div>
-//           </div>
-//           <div className="p-4 bg-gray-50 border-t"><p className="text-center text-sm text-gray-600">Point your camera at a barcode or QR code to scan</p></div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
 // // --- MAIN BILLING COMPONENT ---
 // export default function BillingPage() {
 //   const { data: session, status } = useSession();
@@ -144,8 +100,7 @@
 //   const [scannerError, setScannerError] = useState<string>('');
 //   const [modal, setModal] = useState<{ isOpen: boolean; title: string; message: string | React.ReactNode; onConfirm?: (() => void); confirmText: string; showCancel: boolean; }>({ isOpen: false, title: '', message: '', confirmText: 'OK', showCancel: false });
 //   const suggestionsRef = useRef<HTMLDivElement | null>(null);
-  
-//   // --- GST UPDATE: totalAmount now includes GST in its calculation ---
+
 //   const totalAmount = useMemo(() =>
 //     cart.reduce((sum, item) => {
 //       const { totalPrice } = calculateGstDetails(item.price, item.gstRate);
@@ -153,16 +108,15 @@
 //     }, 0),
 //     [cart]
 //   );
-  
+
 //   const balance = useMemo(() => {
 //     const total = totalAmount;
 //     const given = Number(amountGiven);
 //     return given > 0 ? given - total : 0;
 //   }, [totalAmount, amountGiven]);
-  
+
 //   const upiQR = merchantUpi ? `upi://pay?pa=${merchantUpi}&pn=${encodeURIComponent(merchantName)}&am=${totalAmount.toFixed(2)}&cu=INR&tn=Bill%20Payment` : '';
 
-//   // --- DATA FETCHING & SIDE EFFECTS ---
 //   useEffect(() => {
 //     if (status === 'authenticated' && session?.user?.email) {
 //       const savedData = localStorage.getItem(`userSettings-${session.user.email}`);
@@ -184,10 +138,9 @@
 //           setInventory([]); return;
 //         }
 //         const data: InventoryProduct[] = await res.json();
-//         // --- GST UPDATE: Ensure fetched products have a default gstRate if missing ---
 //         const productsWithGst = data.map(p => ({ ...p, gstRate: p.gstRate || 0 }));
 //         setInventory(productsWithGst);
-//       } catch (err) { 
+//       } catch (err) {
 //         console.warn('Failed to fetch inventory, using empty array:', err);
 //         setInventory([]);
 //       }
@@ -212,7 +165,6 @@
 //     return () => document.removeEventListener('mousedown', handler);
 //   }, []);
 
-//   // --- WHATSAPP FUNCTIONS ---
 //   const sendWhatsAppMessage = async (phoneNumber: string, messageType: string) => {
 //     if (!phoneNumber.trim() || !/^\d{10,15}$/.test(phoneNumber)) {
 //       setModal({ isOpen: true, title: 'Invalid Number', message: 'Please enter a valid WhatsApp number including the country code (e.g., 919876543210).', showCancel: false, confirmText: 'Got it', onConfirm: undefined });
@@ -257,15 +209,13 @@
 //       if (success) { setModal({ isOpen: true, title: 'Bill Shared', message: 'The invoice has been sent to the customer via WhatsApp. Proceeding to payment...', showCancel: false, confirmText: 'OK', onConfirm: () => { setShowWhatsAppSharePanel(false); setShowPaymentOptions(true); } }); }
 //     } else { setShowWhatsAppSharePanel(false); setShowPaymentOptions(true); }
 //   };
-  
+
 //   const sendWhatsAppReceipt = async (paymentMethod: string) => {
 //     let templateType = '';
-//     switch(paymentMethod) { case 'cash': templateType = 'cashPayment'; break; case 'qr-code': templateType = 'qrPayment'; break; case 'card': templateType = 'cardPayment'; break; default: templateType = 'cashPayment'; }
+//     switch (paymentMethod) { case 'cash': templateType = 'cashPayment'; break; case 'qr-code': templateType = 'qrPayment'; break; case 'card': templateType = 'cardPayment'; break; default: templateType = 'cashPayment'; }
 //     return await sendWhatsAppMessage(whatsAppNumber, templateType);
 //   };
 
-//   // --- CORE FUNCTIONS ---
-//   // --- GST UPDATE: addToCart now accepts and stores gstRate ---
 //   const addToCart = useCallback((name: string, price: number, gstRate: number, productId?: string, isEditing = false) => {
 //     if (!name || price < 0) return;
 //     setCart(prev => {
@@ -284,11 +234,9 @@
 //       const scannedValue = results[0].rawValue;
 //       const foundProduct = inventory.find(p => p.id === scannedValue || p.sku?.toLowerCase() === scannedValue.toLowerCase() || p.name.toLowerCase() === scannedValue.toLowerCase());
 //       if (foundProduct) {
-//         // --- GST UPDATE: Pass gstRate when adding from inventory ---
 //         addToCart(foundProduct.name, foundProduct.sellingPrice, foundProduct.gstRate, foundProduct.id);
 //         setScanning(false);
 //       } else {
-//         // --- GST UPDATE: Pass 0 as default gstRate for unknown items ---
 //         addToCart(scannedValue, 0, 0, undefined, true);
 //         setScanning(false);
 //       }
@@ -303,11 +251,10 @@
 //       else if (error.name === 'NotAllowedError') { setModal({ isOpen: true, title: 'Camera Permission Denied', message: 'Camera access was denied. Please allow camera permissions in your browser settings.', showCancel: false, confirmText: 'OK', onConfirm: undefined }); }
 //     }
 //   }, []);
-  
+
 //   const handleManualAdd = useCallback(() => {
 //     const name = productName.trim();
 //     if (!name) { setModal({ isOpen: true, title: 'Item Name Required', message: 'Please enter a name for the custom item.', showCancel: false, confirmText: 'OK' }); return; }
-//     // --- GST UPDATE: Pass 0 as default gstRate for custom items ---
 //     addToCart(name, 0, 0, undefined, true);
 //   }, [productName, addToCart]);
 
@@ -358,13 +305,30 @@
 //           </div>
 //         </header>
 //         <main className="flex-1 overflow-y-auto p-4 space-y-3">
+//           {scanning && (
+//             <div className="bg-white rounded-xl p-3 shadow-sm mb-4">
+//               <div className="max-w-xs mx-auto">
+//                 <Scanner
+//                   constraints={{ facingMode: 'environment' }}
+//                   onScan={handleScan}
+//                   onError={handleScanError}
+//                   scanDelay={300}
+//                   // --- CHANGE ---
+//                   // The `components` prop has been removed to restore the simple,
+//                   // clean scanner view from your old code.
+//                   styles={{ container: { width: '100%', height: 160, borderRadius: '8px', overflow: 'hidden' } }}
+//                 />
+//               </div>
+//               {scannerError && <p className="text-center text-sm text-red-500 mt-2">{scannerError}</p>}
+//             </div>
+//           )}
+
 //           <div className="flex gap-2">
 //             <div ref={suggestionsRef} className="relative flex-grow">
 //               <input type="text" placeholder="Search by name or add custom item..." className="w-full rounded-xl border p-3 shadow-sm focus:ring-2 focus:ring-[#5a4fcf] outline-none" value={productName} onChange={(e) => setProductName(e.target.value)} />
 //               {showSuggestions && (
 //                 <div className="absolute z-10 mt-1 w-full rounded-xl border bg-white shadow-lg">
 //                   {suggestions.map((s) => (
-//                     // --- GST UPDATE: Pass gstRate when adding from suggestions ---
 //                     <div key={s.id} onClick={() => addToCart(s.name, s.sellingPrice, s.gstRate, s.id)} className="cursor-pointer border-b p-3 hover:bg-[#f1f0ff]">
 //                       <div className="flex justify-between font-semibold text-gray-800"><span>{s.name}</span><span>{formatCurrency(s.sellingPrice)}</span></div>
 //                       {s.sku && <p className="text-xs text-gray-500">ID: {s.sku}</p>}
@@ -380,7 +344,6 @@
 //               <div className="text-center text-gray-500 mt-8 py-8"><div className="text-4xl mb-2">🛒</div><p>Your cart is empty</p><p className="text-sm mt-1">Scan an item or add it manually</p></div>
 //             ) : (
 //               cart.map((item) => {
-//                 // --- GST UPDATE: Calculate GST for each cart item here for display ---
 //                 const { gstAmount, totalPrice } = calculateGstDetails(item.price, item.gstRate);
 //                 const totalItemPrice = totalPrice * item.quantity;
 
@@ -404,14 +367,13 @@
 //                         )}
 //                       </div>
 //                       <div className="flex gap-3 items-center ml-2">
-//                          <span className="text-base font-bold text-right text-gray-800">{formatCurrency(totalItemPrice)}</span>
+//                         <span className="text-base font-bold text-right text-gray-800">{formatCurrency(totalItemPrice)}</span>
 //                         <button onClick={() => toggleEdit(item.id)} className={`${item.isEditing ? 'text-green-600' : 'text-[#5a4fcf]'}`}>
 //                           {item.isEditing ? <Check size={18} /> : <Edit2 size={18} />}
 //                         </button>
 //                         <button onClick={() => deleteCartItem(item.id)} className="text-red-500"><Trash2 size={18} /></button>
 //                       </div>
 //                     </div>
-//                     {/* --- GST UPDATE: Display price breakdown if GST is applicable --- */}
 //                     {!item.isEditing && item.gstRate > 0 && (
 //                       <div className="text-xs text-gray-600 bg-gray-50 rounded-md p-2 mt-2 border">
 //                         Price: {formatCurrency(item.price)} + GST ({item.gstRate}%): {formatCurrency(gstAmount)}
@@ -464,8 +426,8 @@
 //                   <div className="rounded-lg bg-gray-50 p-3 space-y-2">
 //                     <p className="text-sm text-center">Confirm receipt of <b>{formatCurrency(totalAmount)}</b> cash.</p>
 //                     <div className="flex items-center gap-2">
-//                         <input id="amountGiven" type="number" placeholder="Amount Given" value={amountGiven} onChange={(e) => setAmountGiven(e.target.value === '' ? '' : parseFloat(e.target.value))} className="w-1/2 rounded-lg border p-2 text-sm focus:ring-2 focus:ring-[#5a4fcf] outline-none" />
-//                         <div className="w-1/2 p-2 rounded-lg bg-white border flex justify-between items-center"><span className="text-xs text-gray-500">Balance:</span><span className={`font-semibold text-sm ${balance < 0 ? 'text-red-600' : 'text-green-600'}`}>{formatCurrency(balance)}</span></div>
+//                       <input id="amountGiven" type="number" placeholder="Amount Given" value={amountGiven} onChange={(e) => setAmountGiven(e.target.value === '' ? '' : parseFloat(e.target.value))} className="w-1/2 rounded-lg border p-2 text-sm focus:ring-2 focus:ring-[#5a4fcf] outline-none" />
+//                       <div className="w-1/2 p-2 rounded-lg bg-white border flex justify-between items-center"><span className="text-xs text-gray-500">Balance:</span><span className={`font-semibold text-sm ${balance < 0 ? 'text-red-600' : 'text-green-600'}`}>{formatCurrency(balance)}</span></div>
 //                     </div>
 //                     <button onClick={handlePaymentSuccess} disabled={isMessaging} className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#5a4fcf] p-2.5 font-bold text-white disabled:bg-[#5a4fcf]/70">{isMessaging ? (<div className="flex items-center gap-2"><div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div><span>Processing...</span></div>) : (<><DollarSign size={18} /><span>Confirm Cash Payment</span></>)}</button>
 //                   </div>
@@ -481,12 +443,10 @@
 //           </div>
 //         </footer>
 //       </div>
-//       <ScannerModal isOpen={scanning} onClose={() => setScanning(false)} onScan={handleScan} onError={handleScanError} />
 //       <Modal isOpen={modal.isOpen} onClose={() => setModal({ ...modal, isOpen: false, message: '' })} title={modal.title} onConfirm={modal.onConfirm} confirmText={modal.confirmText} showCancel={modal.showCancel}>{modal.message}</Modal>
 //     </>
 //   );
 // }
-
 
 'use client';
 
@@ -521,8 +481,8 @@ type CartItem = {
   productId?: string;
   name: string;
   quantity: number;
-  price: number; 
-  gstRate: number; 
+  price: number;
+  gstRate: number;
   isEditing?: boolean;
 };
 
@@ -531,7 +491,7 @@ type InventoryProduct = {
   name: string;
   quantity: number;
   sellingPrice: number;
-  gstRate: number; 
+  gstRate: number;
   image?: string;
   sku?: string;
 };
@@ -765,12 +725,45 @@ export default function BillingPage() {
     const updatePromises = cart.filter(item => item.productId).map(item => fetch(`/api/products/${item.productId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quantityToDecrement: item.quantity }) }));
     await Promise.all(updatePromises).catch(err => console.error("Inventory update failed:", err));
     try {
-      const response = await fetch('/api/sales', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: totalAmount, paymentMethod: selectedPayment === 'cash' ? 'cash' : selectedPayment === 'qr-code' ? 'qr' : 'card' }) });
-      if (!response.ok) { const errorData = await response.json(); console.error("Failed to create sale:", errorData); setModal({ isOpen: true, title: 'Error', message: `Could not save the sale. Server responded: ${errorData.message}`, confirmText: 'OK', showCancel: false }); return; }
-    } catch (error) { console.error("Network error when saving sale:", error); setModal({ isOpen: true, title: 'Network Error', message: 'Could not connect to the server to save the sale.', confirmText: 'OK', showCancel: false }); return; }
+      const response = await fetch('/api/sales', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: totalAmount,
+          // --- FIX APPLIED HERE ---
+          // The selectedPayment state is passed directly,
+          // which will correctly send "qr-code" to the backend.
+          paymentMethod: selectedPayment
+        })
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Failed to create sale:", errorData);
+        setModal({ isOpen: true, title: 'Error', message: `Could not save the sale. Server responded: ${errorData.message}`, confirmText: 'OK', showCancel: false });
+        return;
+      }
+    } catch (error) {
+      console.error("Network error when saving sale:", error);
+      setModal({ isOpen: true, title: 'Network Error', message: 'Could not connect to the server to save the sale.', confirmText: 'OK', showCancel: false });
+      return;
+    }
     let receiptSent = false;
-    if (whatsAppNumber && whatsAppNumber.trim()) { try { receiptSent = await sendWhatsAppReceipt(selectedPayment); } catch (error) { console.error('Failed to send WhatsApp receipt:', error); receiptSent = false; } }
-    setModal({ isOpen: true, title: 'Success!', message: receiptSent ? 'Transaction completed! Receipt sent to customer via WhatsApp and inventory updated.' : 'Transaction completed and inventory updated. Ready for a new bill.', confirmText: 'New Bill', onConfirm: handleTransactionDone, showCancel: false });
+    if (whatsAppNumber && whatsAppNumber.trim()) {
+      try {
+        receiptSent = await sendWhatsAppReceipt(selectedPayment);
+      } catch (error) {
+        console.error('Failed to send WhatsApp receipt:', error);
+        receiptSent = false;
+      }
+    }
+    setModal({
+      isOpen: true,
+      title: 'Success!',
+      message: receiptSent ? 'Transaction completed! Receipt sent to customer via WhatsApp and inventory updated.' : 'Transaction completed and inventory updated. Ready for a new bill.',
+      confirmText: 'New Bill',
+      onConfirm: handleTransactionDone,
+      showCancel: false
+    });
   }, [selectedPayment, totalAmount, cart, handleTransactionDone, whatsAppNumber]);
 
   const handleStartNewBill = useCallback(() => {
@@ -803,9 +796,6 @@ export default function BillingPage() {
                   onScan={handleScan}
                   onError={handleScanError}
                   scanDelay={300}
-                  // --- CHANGE ---
-                  // The `components` prop has been removed to restore the simple,
-                  // clean scanner view from your old code.
                   styles={{ container: { width: '100%', height: 160, borderRadius: '8px', overflow: 'hidden' } }}
                 />
               </div>
