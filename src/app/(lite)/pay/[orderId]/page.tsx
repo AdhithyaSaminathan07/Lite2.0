@@ -92,7 +92,7 @@
 //     // Send WhatsApp receipt if phone number is provided
 //     if (customerPhone) {
 //       const whatsappPhone = formattedPhone.startsWith('91') ? formattedPhone : `91${formattedPhone}`;
-//       const templateName = method === 'upi' ? 'payment_receipt_upi' : 'payment_receipt_card';
+//       const templateName = method === 'upi' ? 'payment_receipt_upiii' : 'payment_receipt_card';
       
 //       const whatsappResponse = await fetch('/api/whatsapp/send', {
 //         method: 'POST',
@@ -511,7 +511,7 @@ export default function PaymentPage() {
       // Send WhatsApp receipt if phone number is provided
       if (customerPhone) {
         const whatsappPhone = formattedPhone.startsWith('91') ? formattedPhone : `91${formattedPhone}`;
-        const templateName = method === 'upi' ? 'payment_receipt_upi' : 'payment_receipt_card';
+        const templateName = method === 'upi' ? 'payment_receipt_upiiii' : 'payment_receipt_card';
         
         const whatsappResponse = await fetch('/api/whatsapp/send', {
           method: 'POST',
