@@ -1,102 +1,79 @@
-// FILE: src/app/api/products/[id]/route.ts
-import { NextResponse } from "next/server";
+// // FILE: src/app/api/products/[id]/route.ts
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/mongodb";
 import Product from "@/models/Product";
+import { NextRequest, NextResponse } from "next/server";
 
-// --- Interfaces for Type Safety ---
-interface IProduct {
-  sku?: string;
-  name?: string;
-  price?: number;
-  quantity?: number;
-}
-
-interface IProductObject extends IProduct {
-  _id: { toString: () => string };
-  __v?: number;
-  tenantId?: string;
-  createdAt?: string | Date;
-  updatedAt?: string | Date;
-}
-
-interface IProductDocument extends IProductObject {
-  toObject: () => IProductObject;
-}
-
-type UpdateBody = { quantityToDecrement: number } | IProduct;
-
-// --- Helper Function ---
-const transformProduct = (product: IProductObject) => {
-  const { _id, __v, ...rest } = product;
-  return { ...rest, id: _id.toString() };
-};
-
-// --- Context Type for Next.js 15 Route Handlers ---
-interface RouteContext {
-  params: Promise<{ id: string }>;
-}
-
-// --- PUT Handler ---
-export async function PUT(request: Request, context: RouteContext) {
+// ✅ No custom type; directly match Next.js RouteHandlerContext shape
+export async function PUT(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
   const params = await context.params;
-  const id = params.id;
-  const tenantId = request.headers.get("x-tenant-id");
+  const { id } = params;
+
+  const session = await getServerSession(authOptions);
+  const tenantId = session?.user?.email;
 
   if (!tenantId) {
-    return NextResponse.json({ message: "Tenant ID is missing" }, { status: 400 });
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
   try {
     await dbConnect();
-    const body: UpdateBody = await request.json();
-    let updatedProduct: IProductDocument | null;
+    const body = await request.json();
 
-    if ("quantityToDecrement" in body && typeof body.quantityToDecrement === "number") {
-      updatedProduct = await Product.findOneAndUpdate(
-        { _id: id, tenantId },
-        { $inc: { quantity: -body.quantityToDecrement } },
-        { new: true }
-      );
-    } else {
-      updatedProduct = await Product.findOneAndUpdate(
-        { _id: id, tenantId },
-        body,
-        { new: true, runValidators: true }
-      );
-    }
+    const query = { _id: id, tenantId };
+    const updateOperation =
+      "quantityToDecrement" in body && typeof body.quantityToDecrement === "number"
+        ? { $inc: { quantity: -body.quantityToDecrement } }
+        : { $set: body };
+
+    const updatedProduct = await Product.findOneAndUpdate(query, updateOperation, {
+      new: true,
+      runValidators: true,
+    }).lean();
 
     if (!updatedProduct) {
       return NextResponse.json(
-        { message: `Product with ID ${id} not found for this tenant.` },
+        { message: "Product not found or unauthorized." },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(transformProduct(updatedProduct.toObject()));
+    return NextResponse.json(updatedProduct);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error(`[PUT /api/products/${id}]`, message);
-    return NextResponse.json({ message: "Failed to update product", error: message }, { status: 500 });
+    return NextResponse.json(
+      { message: "Failed to update product", error: message },
+      { status: 500 }
+    );
   }
 }
 
 // --- DELETE Handler ---
-export async function DELETE(request: Request, context: RouteContext) {
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
   const params = await context.params;
-  const id = params.id;
-  const tenantId = request.headers.get("x-tenant-id");
+  const { id } = params;
+
+  const session = await getServerSession(authOptions);
+  const tenantId = session?.user?.email;
 
   if (!tenantId) {
-    return NextResponse.json({ message: "Tenant ID is missing" }, { status: 400 });
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
   try {
     await dbConnect();
-    const deletedProduct = await Product.findOneAndDelete({ _id: id, tenantId });
+    const result = await Product.deleteOne({ _id: id, tenantId });
 
-    if (!deletedProduct) {
+    if (result.deletedCount === 0) {
       return NextResponse.json(
-        { message: `Product with ID ${id} not found for this tenant.` },
+        { message: "Product not found or unauthorized." },
         { status: 404 }
       );
     }
@@ -104,7 +81,9 @@ export async function DELETE(request: Request, context: RouteContext) {
     return new NextResponse(null, { status: 204 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error(`[DELETE /api/products/${id}]`, message);
-    return NextResponse.json({ message: "Failed to delete product", error: message }, { status: 500 });
+    return NextResponse.json(
+      { message: "Failed to delete product", error: message },
+      { status: 500 }
+    );
   }
 }
