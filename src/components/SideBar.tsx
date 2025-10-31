@@ -1,9 +1,11 @@
+
+
 'use client';
 
 import React, { Dispatch, SetStateAction } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import Image from 'next/image'; // <-- Import the Image component
+import Image from 'next/image';
 import {
   Home,
   Package,
@@ -12,21 +14,20 @@ import {
   LogOut,
   Menu,
   X,
+  Clock, // ✅ Added for Billing History
 } from 'lucide-react';
 
 //=========== PROPS DEFINITIONS ===========//
-// 1. Define the props for the Sidebar component
 interface SidebarProps {
   isMobileOpen: boolean;
   setIsMobileOpen: Dispatch<SetStateAction<boolean>>;
 }
 
-// 2. Define the props for the MobileHeader component
 interface MobileHeaderProps {
   onMenuClick: () => void;
 }
 
-//=========== NAVLINK COMPONENT (No changes needed) ===========//
+//=========== NAVLINK COMPONENT ===========//
 function NavLink({
   href,
   children,
@@ -51,7 +52,7 @@ function NavLink({
   );
 }
 
-//=========== SIDEBAR COMPONENT (Updated with Logo) ===========//
+//=========== SIDEBAR COMPONENT ===========//
 export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
   const router = useRouter();
 
@@ -69,7 +70,7 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
 
   return (
     <>
-      {/* Overlay for mobile view, closes sidebar on click */}
+      {/* Overlay for mobile view */}
       <div
         className={`fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden transition-opacity ${
           isMobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
@@ -77,23 +78,22 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
         onClick={() => setIsMobileOpen(false)}
       ></div>
 
-      {/* The actual sidebar */}
+      {/* Sidebar */}
       <aside
         id="sidebar"
         className={`fixed top-0 left-0 h-full w-64 flex-col border-r bg-white z-40 lg:relative lg:flex transform transition-transform duration-300 ease-in-out ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0`}
       >
+        {/* Header with logo */}
         <div className="flex h-14 items-center justify-between border-b p-4">
-          {/* Logo instead of text */}
           <Image
             src="/lite-logo.png"
             alt="BillzzyLite Logo"
-            width={120} // Adjust width as needed
-            height={30} // Adjust height as needed
-            priority // Add priority to preload the logo
+            width={120}
+            height={30}
+            priority
           />
-          {/* Mobile close button */}
           <button
             onClick={() => setIsMobileOpen(false)}
             className="lg:hidden text-gray-500 hover:text-gray-800"
@@ -102,6 +102,7 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
           </button>
         </div>
 
+        {/* Navigation Links */}
         <nav
           onClick={handleLinkClick}
           className="flex flex-1 flex-col space-y-1 p-4"
@@ -110,20 +111,30 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
             <Home className="mr-3 h-5 w-5" />
             <span>Dashboard</span>
           </NavLink>
+
           <NavLink href="/inventory">
             <Package className="mr-3 h-5 w-5" />
             <span>Inventory</span>
           </NavLink>
+
           <NavLink href="/billing">
             <CreditCard className="mr-3 h-5 w-5" />
             <span>Billing</span>
           </NavLink>
+
+          {/* ✅ New Billing History link */}
+          <NavLink href="/billing-history">
+            <Clock className="mr-3 h-5 w-5" />
+            <span>Billing History</span>
+          </NavLink>
+
           <NavLink href="/settings">
             <Settings className="mr-3 h-5 w-5" />
             <span>Settings</span>
           </NavLink>
         </nav>
 
+        {/* Logout Button */}
         <div className="border-t p-4">
           <button
             onClick={handleLogout}
@@ -138,19 +149,17 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
   );
 }
 
-//=========== MOBILEHEADER COMPONENT (Updated with Logo) ===========//
+//=========== MOBILEHEADER COMPONENT ===========//
 export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
   return (
     <header className="fixed left-0 right-0 top-0 z-20 flex h-14 items-center justify-between border-b bg-white px-4 shadow-sm lg:hidden">
-      {/* Logo instead of text */}
       <Image
         src="/lite-logo.png"
         alt="BillzzyLite Logo"
-        width={110} // Adjust width as needed
-        height={28} // Adjust height as needed
+        width={110}
+        height={28}
         priority
       />
-      {/* The hamburger menu button */}
       <button
         onClick={onMenuClick}
         className="text-gray-600 hover:text-gray-900"
