@@ -1,110 +1,98 @@
 // FILE: src/app/api/products/[id]/route.ts
-import { NextResponse } from "next/server";
+
 import dbConnect from "@/lib/mongodb";
 import Product from "@/models/Product";
+import { NextRequest, NextResponse } from "next/server";
 
-// --- Interfaces for Type Safety ---
-interface IProduct {
-  sku?: string;
-  name?: string;
-  price?: number;
-  quantity?: number;
-}
-
-interface IProductObject extends IProduct {
-  _id: { toString: () => string };
-  __v?: number;
-  tenantId?: string;
-  createdAt?: string | Date;
-  updatedAt?: string | Date;
-}
-
-interface IProductDocument extends IProductObject {
-  toObject: () => IProductObject;
-}
-
-type UpdateBody = { quantityToDecrement: number } | IProduct;
-
-// --- Helper Function ---
-const transformProduct = (product: IProductObject) => {
-  const { _id, __v, ...rest } = product;
-  return { ...rest, id: _id.toString() };
-};
-
-// --- Context Type for Next.js 15 Route Handlers ---
+/**
+ * Defines the shape of the context object for this route.
+ * In Next.js 15+, `params` is a Promise that resolves to the route parameters.
+ */
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
-// --- PUT Handler ---
-export async function PUT(request: Request, context: RouteContext) {
-  const params = await context.params;
-  const id = params.id;
-  const tenantId = request.headers.get("x-tenant-id");
-
-  if (!tenantId) {
-    return NextResponse.json({ message: "Tenant ID is missing" }, { status: 400 });
-  }
-
+/**
+ * Handles PUT requests to update a product by its ID.
+ * This endpoint is public and does not require authentication.
+ */
+export async function PUT(
+  request: NextRequest,
+  context: RouteContext
+): Promise<NextResponse> {
   try {
-    await dbConnect();
-    const body: UpdateBody = await request.json();
-    let updatedProduct: IProductDocument | null;
+    // ✅ CORRECTED: Await the promise to get the actual params object for Next.js 15.
+    const { id } = await context.params;
 
-    if ("quantityToDecrement" in body && typeof body.quantityToDecrement === "number") {
-      updatedProduct = await Product.findOneAndUpdate(
-        { _id: id, tenantId },
-        { $inc: { quantity: -body.quantityToDecrement } },
-        { new: true }
-      );
-    } else {
-      updatedProduct = await Product.findOneAndUpdate(
-        { _id: id, tenantId },
-        body,
-        { new: true, runValidators: true }
-      );
-    }
+    await dbConnect();
+    const body = await request.json();
+
+    // The query now only uses the product ID, making it public.
+    const query = { _id: id };
+
+    // This logic correctly handles both full updates and quantity decrements.
+    const updateOperation =
+      "quantityToDecrement" in body && typeof body.quantityToDecrement === "number"
+        ? { $inc: { quantity: -body.quantityToDecrement } }
+        : { $set: body };
+
+    const updatedProduct = await Product.findOneAndUpdate(query, updateOperation, {
+      new: true, // Return the modified document
+      runValidators: true, // Ensure schema validation is run on update
+    }).lean();
 
     if (!updatedProduct) {
       return NextResponse.json(
-        { message: `Product with ID ${id} not found for this tenant.` },
+        { message: "Product not found." },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(transformProduct(updatedProduct.toObject()));
+    return NextResponse.json(updatedProduct);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error(`[PUT /api/products/${id}]`, message);
-    return NextResponse.json({ message: "Failed to update product", error: message }, { status: 500 });
+    // Log the error for debugging purposes on the server
+    console.error("Failed to update product:", error);
+    return NextResponse.json(
+      { message: "Failed to update product", error: message },
+      { status: 500 }
+    );
   }
 }
 
-// --- DELETE Handler ---
-export async function DELETE(request: Request, context: RouteContext) {
-  const params = await context.params;
-  const id = params.id;
-  const tenantId = request.headers.get("x-tenant-id");
-
-  if (!tenantId) {
-    return NextResponse.json({ message: "Tenant ID is missing" }, { status: 400 });
-  }
-
+/**
+ * Handles DELETE requests to remove a product by its ID.
+ * This endpoint is public and does not require authentication.
+ */
+export async function DELETE(
+  request: NextRequest,
+  context: RouteContext
+): Promise<NextResponse> {
   try {
-    await dbConnect();
-    const deletedProduct = await Product.findOneAndDelete({ _id: id, tenantId });
+    // ✅ CORRECTED: Await the promise to get the actual params object for Next.js 15.
+    const { id } = await context.params;
 
-    if (!deletedProduct) {
+    await dbConnect();
+    
+    // The query now only uses the product ID, making it public.
+    const result = await Product.deleteOne({ _id: id });
+
+    if (result.deletedCount === 0) {
       return NextResponse.json(
-        { message: `Product with ID ${id} not found for this tenant.` },
+        { message: "Product not found." },
         { status: 404 }
       );
     }
 
+    // Return a 204 No Content response, which is standard for successful deletions.
     return new NextResponse(null, { status: 204 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error(`[DELETE /api/products/${id}]`, message);
-    return NextResponse.json({ message: "Failed to delete product", error: message }, { status: 500 });
+    // Log the error for debugging purposes on the server
+    console.error("Failed to delete product:", error);
+    return NextResponse.json(
+      { message: "Failed to delete product", error: message },
+      { status: 500 }
+    );
   }
 }
